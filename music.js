@@ -1,3 +1,6 @@
+import { soundtracks } from './assets/audio/library.js?v=woodland-1';
+import { sampleWorld } from './world.js?v=woodland-1';
+
 const LISTENING_VOLUME = .42;
 
 export function createSoundtrack(audio, button) {
@@ -7,6 +10,39 @@ export function createSoundtrack(audio, button) {
   let revision = 0;
   let fadeFrame = 0;
   let waveAnimation;
+  let currentTrack = null;
+  let currentBank = null;
+  let changingBank = false;
+  let failedTrack = false;
+  const queues = { day: [], night: [] };
+
+  function bankForTime() {
+    const light = sampleWorld().daylight;
+    if (currentBank === 'day' && light >= .24) return 'day';
+    if (currentBank === 'night' && light <= .62) return 'night';
+    return light > .45 ? 'day' : 'night';
+  }
+
+  function chooseTrack(forceNext = false) {
+    const bank = bankForTime();
+    if (!forceNext && !failedTrack && currentTrack && currentBank === bank && !audio.ended) return;
+    if (!queues[bank].length) {
+      const shuffled = soundtracks[bank].slice();
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+      }
+      if (shuffled[0]?.id === currentTrack?.id) shuffled.push(shuffled.shift());
+      queues[bank] = shuffled;
+    }
+    currentTrack = queues[bank].shift();
+    currentBank = bank;
+    failedTrack = false;
+    audio.src = new URL(currentTrack.src, document.baseURI).href;
+    audio.dataset.track = currentTrack.id;
+    audio.dataset.bank = bank;
+    audio.loop = false;
+  }
 
   function show(state) {
     const playing = state === 'playing';
@@ -15,7 +51,7 @@ export function createSoundtrack(audio, button) {
     button.setAttribute('aria-pressed', String(playing));
     button.setAttribute('aria-busy', String(state === 'loading'));
     const label = state === 'loading' ? '取消加载背景音乐' : playing ? '暂停背景音乐' : state === 'error' ? '重试播放背景音乐' : '播放背景音乐';
-    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-label', currentTrack ? `${label}：${currentTrack.title}，${currentTrack.artist}` : label);
     button.title = state === 'loading' ? 'Cancel music' : playing ? 'Pause music' : state === 'error' ? 'Retry music' : 'Play music';
   }
 
@@ -24,15 +60,16 @@ export function createSoundtrack(audio, button) {
     fadeFrame = 0;
   }
 
-  function fadeIn() {
+  function fadeTo(target, duration, complete) {
     cancelFade();
     const initial = audio.volume;
     const started = performance.now();
     function step(now) {
       if (!wanted || audio.paused || document.hidden) return;
-      const progress = Math.max(0, Math.min(1, (now - started) / 1800));
-      audio.volume = Math.max(0, Math.min(1, initial + (LISTENING_VOLUME - initial) * progress));
-      fadeFrame = progress < 1 ? requestAnimationFrame(step) : 0;
+      const progress = Math.max(0, Math.min(1, (now - started) / duration));
+      audio.volume = Math.max(0, Math.min(1, initial + (target - initial) * progress));
+      if (progress < 1) fadeFrame = requestAnimationFrame(step);
+      else { fadeFrame = 0; complete?.(); }
     }
     fadeFrame = requestAnimationFrame(step);
   }
@@ -49,18 +86,21 @@ export function createSoundtrack(audio, button) {
   function pause() {
     wanted = false;
     revision += 1;
+    changingBank = false;
     cancelFade();
     audio.pause();
     show(audio.error ? 'error' : 'paused');
   }
 
-  async function play() {
+  async function play({ next = false } = {}) {
     wanted = true;
     const current = ++revision;
-    show('loading');
-    audio.volume = 0;
-    if (audio.error) audio.load();
+    changingBank = false;
+    cancelFade();
     try {
+      chooseTrack(next || failedTrack || !!audio.error);
+      show('loading');
+      audio.volume = 0;
       await audio.play();
       if (current !== revision && !wanted) audio.pause();
     } catch {
@@ -82,24 +122,38 @@ export function createSoundtrack(audio, button) {
   audio.addEventListener('playing', () => {
     if (!wanted || document.hidden) { pause(); return; }
     show('playing');
-    fadeIn();
+    if (!changingBank) fadeTo(LISTENING_VOLUME, 1800);
   });
   audio.addEventListener('waiting', () => { if (wanted) show('loading'); });
   audio.addEventListener('pause', () => {
     // Ignore an old queued pause event if a newer play request has already started.
     if (!audio.paused) return;
+    if (audio.ended && wanted) return;
     wanted = false;
     cancelFade();
     show(audio.error ? 'error' : 'paused');
   });
   audio.addEventListener('error', () => {
+    failedTrack = true;
     wanted = false;
     revision += 1;
     cancelFade();
     audio.pause();
     show('error');
   });
-  audio.addEventListener('ended', () => { if (!audio.loop) pause(); });
+  audio.addEventListener('ended', () => {
+    if (wanted && !document.hidden) void play({ next: true });
+    else pause();
+  });
+  // Dusk and dawn move between libraries with a short fade, never a hard cut.
+  setInterval(() => {
+    if (!wanted || audio.paused || changingBank || currentBank === bankForTime() || button.dataset.audio !== 'playing') return;
+    changingBank = true;
+    const current = revision;
+    fadeTo(0, 1200, () => {
+      if (wanted && current === revision) void play({ next: true });
+    });
+  }, 5000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   show('paused');
   return { toggle };

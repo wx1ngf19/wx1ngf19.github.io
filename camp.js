@@ -32,6 +32,7 @@ function conditions(world) {
     fog: clamp(world.fog ?? 0),
     wind: clamp(world.wind ?? 1, 0, 3),
     fire: clamp(world.fire ?? 1),
+    houseLight: clamp(world.houseLight ?? night),
     skyTint,
   };
 }
@@ -92,7 +93,8 @@ function pine(ctx, x, base, height, phase, time, world, distant = false) {
 }
 
 function shore(ctx, width, height, x, y, size, flicker, world) {
-  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], [.34, .944], [.365, .966], [.403, .983], [.44, 1]];
+  const compact = width < 1000 && width / height < 1.65;
+  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], ...(compact ? [[.35, .936], [.40, .945], [.45, .967], [.50, .985], [.54, 1]] : [[.34, .944], [.365, .966], [.403, .983], [.44, 1]])];
   const points = outline.map(([px, py]) => [px * width, py * height]);
   const earth = ctx.createLinearGradient(0, height * .87, 0, height);
   earth.addColorStop(0, material([11, 21, 25], [83, 92, 73], world, .5));
@@ -124,6 +126,96 @@ function shore(ctx, width, height, x, y, size, flicker, world) {
   ctx.beginPath();
   points.slice(3, 9).forEach(([px, py], index) => index ? ctx.lineTo(px, py) : ctx.moveTo(px, py));
   ctx.stroke();
+}
+
+function cabin(ctx, width, height, world) {
+  const compact = width < 1000 && width / height < 1.65;
+  const cabinWidth = Math.min(168, Math.max(78, width * .116), height * .35);
+  const scale = cabinWidth / 100;
+  const x = width * (compact ? .33 : .110);
+  const y = height * (compact ? .975 : .916);
+  const light = world.houseLight;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  // A thin stone footing and a flattened shadow keep the small house grounded.
+  ctx.fillStyle = 'rgba(2, 8, 10, .28)';
+  ctx.beginPath(); ctx.ellipse(0, 3, 52, 8, -.015, 0, TAU); ctx.fill();
+  glow(ctx, -3, 5, 48, [[0, `rgba(244, 180, 91, ${.14 * light})`], [.45, `rgba(216, 143, 62, ${.055 * light})`], [1, 'rgba(216, 143, 62, 0)']], .23);
+  polygon(ctx, [[-47, -1], [18, -2], [49, -6], [49, 0], [19, 5], [-47, 5]], material([21, 32, 31], [112, 122, 103], world, .4));
+  polygon(ctx, [[18, -2], [49, -6], [49, 0], [19, 5]], material([15, 28, 28], [78, 94, 83], world, .4));
+  ctx.strokeStyle = material([13, 24, 25], [63, 79, 69], world, .4);
+  ctx.lineWidth = .65;
+  ctx.beginPath();
+  ctx.moveTo(-29, 0); ctx.lineTo(-31, 5); ctx.moveTo(-7, 0); ctx.lineTo(-5, 5);
+  ctx.moveTo(14, 0); ctx.lineTo(15, 4); ctx.moveTo(34, -3); ctx.lineTo(35, 2); ctx.stroke();
+
+  // A gable, one timber facade and a shaded side wall establish modest volume.
+  polygon(ctx, [[-44, -38], [17, -38], [17, 0], [-44, 0]], material([23, 32, 30], [108, 101, 75], world, .4));
+  polygon(ctx, [[17, -38], [46, -29], [46, -5], [17, 0]], material([15, 27, 27], [72, 83, 68], world, .4));
+  polygon(ctx, [[-44, -38], [-14, -65], [17, -38]], material([27, 35, 31], [123, 111, 78], world, .4));
+  ctx.strokeStyle = material([11, 24, 25], [71, 79, 61], world, .4);
+  ctx.lineWidth = .7;
+  for (let row = 0; row < 5; row += 1) {
+    const by = -34 + row * 7;
+    ctx.beginPath(); ctx.moveTo(-43, by); ctx.lineTo(17, by);
+    ctx.lineTo(45, by + 7); ctx.stroke();
+  }
+  ctx.strokeStyle = material([31, 42, 35], [151, 137, 94], world, .4);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-43, -37); ctx.lineTo(-43, 0);
+  ctx.moveTo(17, -37); ctx.lineTo(17, -.5); ctx.stroke();
+
+  // The roof is slate rather than a bright accent; a narrow chimney stays still.
+  polygon(ctx, [[-50, -40], [-14, -71], [-14, -65], [-44, -35]], material([18, 30, 33], [87, 102, 96], world, .4));
+  polygon(ctx, [[-14, -71], [20, -61], [50, -31], [17, -40]], material([13, 26, 30], [58, 77, 75], world, .4));
+  ctx.strokeStyle = material([35, 48, 47], [137, 154, 137], world, .4);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-49, -40); ctx.lineTo(-14, -71); ctx.lineTo(20, -61); ctx.stroke();
+  ctx.strokeStyle = material([6, 18, 23], [37, 57, 57], world, .4);
+  ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(-49, -39); ctx.lineTo(-43, -35);
+  ctx.moveTo(17, -40); ctx.lineTo(50, -31); ctx.stroke();
+  polygon(ctx, [[25, -75], [32, -73], [32, -49], [25, -51]], material([27, 38, 36], [119, 127, 108], world, .4));
+  polygon(ctx, [[32, -73], [36, -75], [36, -51], [32, -49]], material([17, 31, 31], [76, 96, 88], world, .4));
+  polygon(ctx, [[23, -77], [34, -78], [38, -75], [31, -72], [23, -74]], material([35, 46, 41], [152, 156, 132], world, .4));
+
+  const frame = material([24, 35, 31], [96, 85, 57], world, .35);
+  polygon(ctx, [[-37, -32], [-11, -32], [-11, -8], [-37, -8]], frame);
+  const glassColor = blend(blend([9, 21, 26], [44, 67, 69], world.daylight), [244, 185, 91], light);
+  const glass = ctx.createLinearGradient(-34, -29, -14, -10);
+  glass.addColorStop(0, rgb(blend(glassColor, [255, 225, 163], light * .28)));
+  glass.addColorStop(1, rgb(glassColor));
+  polygon(ctx, [[-34.5, -29.5], [-13.5, -29.5], [-13.5, -10.5], [-34.5, -10.5]], glass);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-34.5, -29.5, 21, 19); ctx.clip();
+  ctx.strokeStyle = `rgba(177, 204, 195, ${world.daylight * .25 * (1 - light)})`;
+  ctx.lineWidth = 2.3;
+  ctx.beginPath(); ctx.moveTo(-34, -25); ctx.lineTo(-17, -30);
+  ctx.moveTo(-33, -14); ctx.lineTo(-14, -22); ctx.stroke();
+  ctx.restore();
+  ctx.strokeStyle = frame; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-24, -30); ctx.lineTo(-24, -10);
+  ctx.moveTo(-35, -20); ctx.lineTo(-13, -20); ctx.stroke();
+  glow(ctx, -24, -20, 29, [[0, `rgba(246, 184, 86, ${.10 * light})`], [.35, `rgba(238, 156, 62, ${.035 * light})`], [1, 'rgba(238, 156, 62, 0)']]);
+
+  polygon(ctx, [[-6, -30], [10, -30], [10, 0], [-6, 0]], material([12, 25, 26], [72, 77, 56], world, .35));
+  ctx.strokeStyle = material([27, 37, 30], [111, 107, 73], world, .35);
+  ctx.lineWidth = .9;
+  ctx.beginPath(); ctx.moveTo(-2, -28); ctx.lineTo(-2, -.5);
+  ctx.moveTo(6, -28); ctx.lineTo(6, -.5); ctx.stroke();
+  ctx.fillStyle = material([42, 48, 36], [166, 152, 101], world, .35);
+  ctx.beginPath(); ctx.arc(6.2, -13, .9, 0, TAU); ctx.fill();
+  polygon(ctx, [[-9, 1], [12, 1], [16, 4], [-8, 6]], material([24, 36, 34], [121, 128, 105], world, .3));
+  // Every artificial-light contribution follows the shared world's houseLight.
+  ctx.fillStyle = `rgba(251, 192, 104, ${.48 * light})`;
+  ctx.fillRect(-5.5, -.3, 15, .9);
+  const spill = ctx.createLinearGradient(0, 0, 0, 21);
+  spill.addColorStop(0, `rgba(242, 179, 88, ${.15 * light})`);
+  spill.addColorStop(1, 'rgba(226, 146, 60, 0)');
+  polygon(ctx, [[-5, 1], [9, 1], [20, 21], [-14, 21]], spill);
+  ctx.restore();
 }
 
 function fire(ctx, x, y, size, time, flicker, world) {
@@ -224,13 +316,14 @@ export function drawCamp(context, { width, height, time = 0, world = {} }) {
   ctx.restore();
 
   // Muted, smaller pines recede behind the larger trees at the shore's edge.
-  pine(ctx, width * .043, height * .878, Math.min(height * .175, width * .32), 2.9, time, weather, true);
-  pine(ctx, width * .102, height * .881, Math.min(height * .132, width * .23), 4.4, time, weather, true);
-  pine(ctx, width * .145, height * .892, Math.min(height * .075, width * .13), 5.7, time, weather, true);
+  pine(ctx, width * .018, height * .878, Math.min(height * .212, width * .39), 2.9, time, weather, true);
+  pine(ctx, width * .048, height * .881, Math.min(height * .160, width * .28), 4.4, time, weather, true);
+  pine(ctx, width * .086, height * .892, Math.min(height * .091, width * .158), 5.7, time, weather, true);
   shore(ctx, width, height, x, y, size, flicker, weather);
-  pine(ctx, width * .012, height * .878, Math.min(height * .285, width * .54), .7, time, weather);
-  pine(ctx, width * .078, height * .883, Math.min(height * .172, width * .30), 2.6, time, weather);
-  pine(ctx, width * .118, height * .887, Math.min(height * .102, width * .18), 4.1, time, weather);
+  pine(ctx, width * .012, height * .878, Math.min(height * .355, width * .66), .7, time, weather);
+  pine(ctx, width * .055, height * .883, Math.min(height * .215, width * .375), 2.6, time, weather);
+  pine(ctx, width * .080, height * .887, Math.min(height * .1275, width * .225), 4.1, time, weather);
+  cabin(ctx, width, height, weather);
   fire(ctx, x, y, size, time, flicker, weather);
   ctx.restore();
 }

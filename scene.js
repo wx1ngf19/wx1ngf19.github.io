@@ -1,6 +1,8 @@
-import { drawCamp } from './camp.js?v=ecosystem-2';
-import { fragmentSource } from './sky.js?v=ecosystem-2';
-import { sampleWorld, cloudAt, SEA_LEVEL } from './world.js?v=ecosystem-2';
+import { drawCamp } from './camp.js?v=woodland-1';
+import { drawBirds } from './fauna.js?v=woodland-1';
+import { drawRain } from './atmosphere.js?v=woodland-1';
+import { fragmentSource } from './sky.js?v=woodland-1';
+import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from './world.js?v=woodland-1';
 
 
 const vertexSource = `
@@ -54,16 +56,36 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uGalaxy', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uGalaxy', 'uCosmos', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
+  let pixelBudget = maxPixels;
+  let viewportWidth = 1, viewportHeight = 1;
+  let frameCount = 0, frameTotal = 0;
 
   return {
     resize(width, height) {
-      const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.4, Math.sqrt(maxPixels / (width * height)));
+      viewportWidth = width;
+      viewportHeight = height;
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.4, Math.sqrt(pixelBudget / (width * height)));
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.uResolution, width, height);
+    },
+    observeFrame(elapsed) {
+      if (elapsed > 250) return;
+      frameTotal += elapsed;
+      if (++frameCount < 60) return;
+      const average = frameTotal / frameCount;
+      frameCount = 0;
+      frameTotal = 0;
+      // Keep silhouettes and stars crisp; adapt only the expensive sky surface.
+      const nextBudget = average > 45 ? Math.max(380000, pixelBudget * .72)
+        : average < 35 ? Math.min(maxPixels, pixelBudget * 1.04) : pixelBudget;
+      if (Math.abs(nextBudget - pixelBudget) > 1000) {
+        pixelBudget = nextBudget;
+        this.resize(viewportWidth, viewportHeight);
+      }
     },
     draw(time, pointer, ripple, drift, world, motion) {
       gl.uniform1f(uniforms.uTime, time);
@@ -76,6 +98,9 @@ function makeRenderer(canvas) {
       gl.uniform4f(uniforms.uWeather, world.coverage, world.fog, world.wind, world.humidity);
       gl.uniform2f(uniforms.uCloudOffset, ...world.cloudOffset);
       gl.uniform2f(uniforms.uGalaxy, world.galaxyAngle * motion, world.galaxySpin);
+      gl.uniform4f(uniforms.uCosmos, ...world.cosmos);
+      gl.uniform4f(uniforms.uPhenomena, world.aurora, world.nightCloud, world.seaGlow, world.rainbow);
+      gl.uniform4f(uniforms.uSkyFlow, world.rain, world.lightning * motion, ...world.skyFlow);
       gl.uniform4f(uniforms.uWaves, ...world.waves);
       gl.uniform1f(uniforms.uMotion, motion);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -166,9 +191,10 @@ export function createUniverse(surface, starCanvas) {
     const pointerX = (pointer.x * .5 + .5) * width;
     const pointerY = (.5 - pointer.y * .5) * height;
     const seeking = motionAmount > .5 && Math.abs(target.x) + Math.abs(target.y) > .005;
-    const rotation = world.galaxyAngle * motionAmount;
+    const rotation = world.galaxyAngle * motionAmount + world.cosmos[0];
     const cos = Math.cos(rotation), sin = Math.sin(rotation);
-    if (world.night > .001) for (const star of stars) {
+    const starVisibility = world.night * (1 - smooth(.65, .90, world.coverage)) * (1 - smooth(.42, .68, world.fog));
+    if (starVisibility > .001) for (const star of stars) {
       const depth = .65 + star.depth * .35;
       const sx = star.x - width * .5;
       const sy = height * .48 - star.y;
@@ -176,17 +202,20 @@ export function createUniverse(surface, starCanvas) {
       const x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
       const y = height * .48 - sin * sx - cos * sy - pointer.y * star.depth * 9 + drift.y * height * depth;
       if (y < 5 || y > height * 0.790) continue;
-      const twinkle = .80 + Math.sin(world.seconds * .72 + star.phase) * .20 * motionAmount;
+      // Two incommensurate frequencies give each star its own scintillation.
+      const scintillation = Math.sin(world.seconds * (.57 + star.depth * .81) + star.phase) * .13
+        + Math.sin(world.seconds * (1.71 + star.depth * .37) + star.phase * 2.13) * .08;
+      const twinkle = .79 + scintillation * motionAmount * (.65 + y / height * .5);
       const distance = Math.hypot(x - pointerX, y - pointerY);
       const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
       const edgeFade = Math.min(1, y / 12, (height * .790 - y) / 12);
       const cloud = cloudAt(x / width, 1 - y / height, width / height, world);
-      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * world.night * (1 - cloud) ** 2 * (1 - world.fog * .5);
-      if (proximity > 0 && star.alpha > .36) near.push({ x, y, distance });
+      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * starVisibility * (1 - cloud) ** 2 * (1 - world.fog * .5);
+      if (proximity > 0 && star.alpha > .36 && alpha > .05) near.push({ x, y, distance });
       const color = star.warm ? '222, 199, 155' : '193, 215, 228';
       context.fillStyle = `rgba(${color}, ${alpha})`;
       context.beginPath();
-      context.arc(x, y, star.radius + (star.prominent ? .25 : 0), 0, Math.PI * 2);
+      context.arc(x, y, (star.radius + (star.prominent ? .25 : 0)) * (1 + scintillation * .16 * motionAmount), 0, Math.PI * 2);
       context.fill();
       if (star.prominent) {
         const glow = context.createRadialGradient(x, y, 0, x, y, 6);
@@ -247,13 +276,18 @@ export function createUniverse(surface, starCanvas) {
       context.restore();
     }
 
-    const meteorPhase = ((world.seconds + 17) % 19 + 19) % 19;
-    if (meteorPhase < 1.8 && world.night > .1 && motionAmount > .5) {
-      const progress = meteorPhase / 1.8;
-      const x = width * (0.82 - progress * 0.23);
-      const y = height * (0.13 + progress * 0.16);
-      const tailX = width * 0.09;
-      const tailY = -height * 0.062;
+    const meteorSlot = Math.floor(world.seconds / 37);
+    const eventSeed = Math.sin(meteorSlot * 127.1 + 311.7) * 43758.5453;
+    const eventRandom = eventSeed - Math.floor(eventSeed);
+    const meteorDuration = 1.25 + eventRandom * 1.1;
+    const meteorPhase = ((world.seconds % 37) + 37) % 37 - 4 - eventRandom * 17;
+    if (eventRandom > .19 && meteorPhase >= 0 && meteorPhase < meteorDuration && world.night > .1 && motionAmount > .5) {
+      const progress = meteorPhase / meteorDuration;
+      const direction = eventRandom > .55 ? 1 : -1;
+      const x = width * (.2 + eventRandom * .6 + direction * (progress - .5) * .22);
+      const y = height * (.09 + eventRandom * .24 + progress * .13);
+      const tailX = -direction * width * (.055 + eventRandom * .045);
+      const tailY = -height * .062;
       const trail = context.createLinearGradient(x, y, x + tailX, y + tailY);
       const visibility = world.night * (1 - cloudAt(x / width, 1 - y / height, width / height, world));
       trail.addColorStop(0, `rgba(224, 219, 198, ${Math.sin(progress * Math.PI) * .60 * visibility})`);
@@ -265,7 +299,9 @@ export function createUniverse(surface, starCanvas) {
       context.lineTo(x + tailX, y + tailY);
       context.stroke();
     }
+    drawBirds(context, width, height, world, motionAmount);
     drawCamp(context, { width, height, time: world.seconds * Math.max(.25, motionAmount), world });
+    drawRain(context, width, height, world, motionAmount);
   }
 
   function draw() {
@@ -285,6 +321,7 @@ export function createUniverse(surface, starCanvas) {
     if (!lastFrame) lastFrame = timestamp;
     const elapsed = timestamp - lastFrame;
     if (elapsed >= 31) {
+      renderer?.observeFrame(elapsed);
       const delta = Math.min(elapsed / 1000, 0.08);
       time += delta;
       const ease = 1 - Math.exp(-delta * 2.4);

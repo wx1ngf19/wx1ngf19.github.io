@@ -1,4 +1,5 @@
-import { SEA_LEVEL } from './world.js?v=ecosystem-2';
+import { SEA_LEVEL } from './world.js?v=woodland-1';
+import { atmosphereSource } from './atmosphere.js?v=woodland-1';
 
 export const fragmentSource = `
 precision highp float;
@@ -6,7 +7,7 @@ varying vec2 vUv;
 uniform vec2 uResolution, uPointer, uDrift, uCloudOffset, uGalaxy;
 uniform float uTime, uMotion;
 uniform vec3 uRipple, uSun;
-uniform vec4 uMoon, uWorld, uWeather, uWaves;
+uniform vec4 uMoon, uWorld, uWeather, uWaves, uCosmos, uPhenomena, uSkyFlow;
 
 float hash(vec2 p) {
   vec2 cell = mod(p, 256.0);
@@ -28,6 +29,7 @@ float fbm(vec2 p) {
   return value;
 }
 mat2 rotation(float a) { return mat2(cos(a), sin(a), -sin(a), cos(a)); }
+${atmosphereSource}
 vec3 sunlight() {
   // Longer optical path at low solar altitude removes more short wavelengths.
   float mass = 1.0 / max(0.09, sin(max(uSun.z, 0.0)) + 0.08);
@@ -44,29 +46,32 @@ vec3 sky(vec2 p, float aspect) {
   float sunset = dusk * exp(-h * 3.1);
   float towardSun = exp(-pow((p.x - sun.x) * 1.3, 2.0));
   color = mix(color, vec3(0.52, 0.32, 0.38), dusk * pow(h * (1.0 - h) * 4.0, 2.0) * 0.28);
-  color += vec3(0.65, 0.24, 0.085) * sunset * (0.25 + towardSun * 0.75);
+  color += vec3(0.78, 0.30, 0.12) * sunset * (0.25 + towardSun * 0.75);
 
   // A luminous stellar disk with dust lanes, not an image painted on the sky.
-  if (night > 0.001) {
-  vec2 q = rotation(-uGalaxy.x) * (p + uDrift + uPointer * vec2(0.010, 0.006) - vec2(0.0, 0.52)) + vec2(0.0, 0.52);
-  float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1) * 0.045;
+  float stellarVisibility = night * (1.0 - smoothstep(0.65, 0.90, uWeather.x)) * (1.0 - smoothstep(0.42, 0.68, uWeather.y));
+  if (stellarVisibility > 0.001) {
+  vec2 q = rotation(-uGalaxy.x - uCosmos.x) * (p + uDrift + uPointer * vec2(0.010, 0.006) - vec2(0.0, 0.52)) + vec2(0.0, 0.52);
+  float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1 + uCosmos.z) * 0.045;
   vec2 flow = vec2(sin(uGalaxy.y) * 0.8, cos(uGalaxy.y) * 0.5);
   float dust = fbm(q * 6.0 + flow + vec2(7.0, 2.0));
   float grain = noise(q * 49.0 + flow * 2.0 + dust * 2.0);
-  float band = exp(-pow(abs(spine + (dust - 0.5) * 0.13) * 7.7, 1.4));
+  float band = exp(-pow(abs(spine + (dust - 0.5) * 0.13) * 7.7 / uCosmos.y, 1.4));
   float rift = 1.0 - smoothstep(0.008, 0.050, abs(spine + (dust - 0.5) * 0.11));
-  vec3 stellar = mix(vec3(0.15, 0.27, 0.30), vec3(0.39, 0.30, 0.19), smoothstep(-0.45, 0.65, q.x));
-  color += stellar * band * (0.3 + dust) * (0.4 + grain * 0.7) * (1.0 - rift * 0.73) * night * 1.4;
+  vec3 stellar = mix(vec3(0.15, 0.27, 0.30), vec3(0.39, 0.30, 0.19), smoothstep(-0.45, 0.65, q.x + uCosmos.z));
+  color += stellar * band * (0.3 + dust) * (0.4 + grain * 0.7) * (1.0 - rift * 0.73) * stellarVisibility * 1.4;
 
   // An original distant spiral: older warm core, cooler arms, differential flow.
-  vec2 g = rotation(0.28) * (q - vec2(0.40, 0.74));
+  vec2 g = rotation(0.28 + uCosmos.x) * (q - vec2(0.40 + uCosmos.z, 0.74 + uCosmos.x * 0.3)) / uCosmos.y;
   g.y *= 2.8;
   float r = length(g);
   float a = atan(g.y, g.x);
-  float arms = pow(0.5 + 0.5 * cos(a * 3.0 - log(r + 0.018) * 5.0 - uGalaxy.y), 7.0);
+  float arms = pow(0.5 + 0.5 * cos(a * 3.0 - log(r + 0.018) * (4.6 + uCosmos.w * 0.8) - uGalaxy.y), 7.0);
   float disk = exp(-r * 12.0);
-  color += (vec3(0.11, 0.18, 0.22) * arms * disk * 0.55 + vec3(0.34, 0.28, 0.18) * exp(-r * 65.0) * 0.5) * night;
+  color += (vec3(0.11, 0.18, 0.22) * arms * disk * 0.55 + vec3(0.34, 0.28, 0.18) * exp(-r * 65.0) * 0.5) * stellarVisibility;
   }
+
+  color += atmosphericLight(p);
 
   float sunDistance = length(p - sun);
   float sunVisible = smoothstep(-0.11, 0.01, uSun.z);
@@ -93,8 +98,11 @@ vec3 sky(vec2 p, float aspect) {
   vec3 cloudDay = mix(vec3(0.91, 0.92, 0.89), vec3(0.45, 0.53, 0.59), shade * (0.4 + uWeather.x * 0.6));
   vec3 cloudNight = mix(vec3(0.045, 0.065, 0.087), vec3(0.016, 0.030, 0.045), shade);
   vec3 cloudColor = mix(cloudNight, cloudDay, day);
-  cloudColor += tint * dusk * towardSun * (1.0 - shade) * 0.42;
+  cloudColor += tint * dusk * towardSun * (1.0 - shade) * 0.58;
+  float cloudFlash = uSkyFlow.y * exp(-pow((p.x - 0.36) * 2.4, 2.0));
+  cloudColor += vec3(0.40, 0.45, 0.57) * cloudFlash;
   color = mix(color, cloudColor, clouds * 0.95);
+  if (uPhenomena.w > 0.001) color += rainbowLight(p, aspect) * (1.0 - clouds * 0.5);
   color *= 1.0 - uWeather.x * day * 0.10;
 
   // Receding headlands share the sky's light and disappear into moist air.
@@ -133,7 +141,12 @@ void main() {
     float moonX = (uMoon.x - 0.5) * aspect + (swell - 0.5) * depth * 0.5;
     float lunar = exp(-pow((p.x - moonX) / (0.02 + depth * 0.75), 2.0));
     color += vec3(0.23, 0.29, 0.30) * lunar * (crest * 0.45 + fine * 0.15) * uWorld.y * max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z));
-    color += vec3(0.25, 0.11, 0.035) * uWorld.z * exp(-depth * 4.0) * 0.2;
+    color += vec3(0.32, 0.14, 0.055) * uWorld.z * exp(-depth * 4.0) * 0.25;
+    if (uPhenomena.z > 0.001) {
+      float bloom = noise(water * vec2(0.18, 0.09) + uSkyFlow.zw * 0.3);
+      float livingFoam = (crest * 0.75 + fine * 0.65) * smoothstep(0.32, 0.67, bloom);
+      color += vec3(0.015, 0.33, 0.48) * livingFoam * uPhenomena.z * smoothstep(0.012, 0.10, depth);
+    }
     float age = uTime - uRipple.z;
     if (age >= 0.0 && age < 5.0) {
       vec2 center = vec2((uRipple.x - 0.5) * aspect, uRipple.y);

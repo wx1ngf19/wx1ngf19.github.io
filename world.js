@@ -23,37 +23,77 @@ function weatherSignal(seconds, seed, duration = 420) {
   return mix(random(index, seed), random(index + 1, seed), ease(position - index));
 }
 
+function weatherAt(seconds) {
+  const character = weatherSignal(seconds, 75139, DAY_SECONDS * 1.37);
+  const coverage = clamp(.06 + weatherSignal(seconds, 19870921) * .82 + (character - .5) * .20, .04, .97);
+  const humidity = .36 + weatherSignal(seconds, 11997, 570) * .63;
+  const rain = smooth(.65, .91, coverage) * smooth(.68, .94, humidity)
+    * (.35 + weatherSignal(seconds, 37519, 290) * .65);
+  return { character, coverage, humidity, rain };
+}
+
 export function sampleWorld(now = Date.now()) {
   const seconds = (now - WORLD_EPOCH) / 1000;
   const days = seconds / DAY_SECONDS;
   const phase = mod(days, 1);
   const hourAngle = (phase - .5) * TAU;
   const latitude = .70;
-  const declination = .18 * Math.sin(days * TAU / 24);
+  const declination = .36 * Math.sin(days * TAU / 9) + .045 * Math.sin(days * TAU / 17);
   const altitude = Math.asin(Math.sin(latitude) * Math.sin(declination) + Math.cos(latitude) * Math.cos(declination) * Math.cos(hourAngle));
   const daylight = smooth(-.13, .18, altitude);
   const night = 1 - smooth(-.27, -.075, altitude);
-  const twilight = Math.exp(-(((altitude + .025) / .16) ** 2));
-  const coverage = .06 + weatherSignal(seconds, 19870921) * .91;
-  const humidity = .36 + weatherSignal(seconds, 11997, 570) * .63;
+  const twilight = Math.exp(-(((altitude + .025) / .18) ** 2));
+  const { character, coverage, humidity, rain } = weatherAt(seconds);
   const wind = .13 + weatherSignal(seconds, 52913, 510) * .87;
   const cooling = 1 - smooth(.00, .50, altitude);
   const fog = clamp(smooth(.58, .94, humidity) * (1 - wind * .75) * (.16 + cooling * .78));
   const lunarAngle = mod(days / 12, 1) * TAU;
   const moonHour = hourAngle - lunarAngle;
   const moonAltitude = Math.asin(Math.sin(latitude) * Math.sin(-declination) + Math.cos(latitude) * Math.cos(declination) * Math.cos(moonHour));
-  const skyTint = [mix(.065, .65, daylight), mix(.10, .75, daylight), mix(.15, .78, daylight)];
+  const east = -Math.cos(declination) * Math.sin(hourAngle);
+  const north = Math.cos(latitude) * Math.sin(declination) - Math.sin(latitude) * Math.cos(declination) * Math.cos(hourAngle);
+  const bearing = .15 * Math.sin(days * TAU / 13);
+  const horizontal = east * Math.cos(bearing) + north * Math.sin(bearing) + north * .35;
+  const sunX = .5 + .44 * Math.tanh(horizontal * 1.35);
+  // Select the night's schedule at noon, while its lamps are fully extinguished.
+  // This avoids a discontinuity in occupied-house lighting at midnight.
+  const nightIndex = Math.floor(days + .5);
+  const lampThreshold = -.11 - random(nightIndex, 61327) * .13;
+  const houseLight = (1 - smooth(lampThreshold - .05, lampThreshold + .05, altitude)) * (.78 + weatherSignal(seconds, 98231, 310) * .22);
+  const activity = weatherSignal(seconds, 72817, DAY_SECONDS * .61);
+  const aurora = night * smooth(.63, .88, activity) * (1 - coverage * .72) * (1 - fog * .85);
+  const nightCloud = smooth(-.28, -.20, altitude) * (1 - smooth(-.12, -.09, altitude))
+    * smooth(.55, .82, character) * (1 - coverage * .8);
+  const seaGlow = night * smooth(.58, .84, weatherSignal(seconds, 83917, DAY_SECONDS * 1.31)) * (1 - rain * .8);
+  const recentRain = Math.max(rain, weatherAt(seconds - 120).rain);
+  const rainbow = smooth(.02, .10, altitude) * (1 - smooth(.45, .70, altitude))
+    * smooth(.015, .16, recentRain) * (1 - smooth(.50, .84, coverage));
+  const storm = smooth(.76, .92, coverage) * smooth(.76, .96, humidity);
+  const stormSlot = Math.floor(seconds / 31);
+  const flashAge = mod(seconds, 31) - 4 - random(stormSlot, 71913) * 21;
+  const lightning = storm * smooth(0, .09, flashAge) * (1 - smooth(.09, .85, flashAge));
+  const skyPhase = mod(seconds * .018, TAU);
+  const skyTint = [clamp(mix(.065, .65, daylight) + twilight * .12), clamp(mix(.10, .75, daylight) + twilight * .035), mix(.15, .78, daylight)];
   return {
-    seconds, phase, altitude, daylight, night, twilight, coverage, humidity, wind, fog,
-    fire: 1 - smooth(-.14, .065, altitude),
-    sun: [.5 - Math.sin(hourAngle) * .43, SEA_LEVEL + Math.sin(altitude) * .64, altitude],
+    seconds, phase, altitude, daylight, night, twilight, coverage, humidity, wind, fog, houseLight,
+    fire: (1 - smooth(-.14, .065, altitude)) * (1 - rain * .82),
+    rain, aurora, nightCloud, seaGlow, rainbow, lightning,
+    skyFlow: [Math.sin(skyPhase), Math.cos(skyPhase)],
+    sun: [sunX, SEA_LEVEL + Math.sin(altitude) * .64, altitude],
     moon: [.5 - Math.sin(moonHour) * .43, SEA_LEVEL + Math.sin(moonAltitude) * .64, lunarAngle, moonAltitude],
     galaxyAngle: Math.sin(days * TAU * 1.0027379) * .40 + Math.sin(seconds * .009) * .075,
     galaxySpin: mod(seconds * .0025, TAU),
+    // Slow, aperiodic artistic evolution, while individual star identities persist.
+    cosmos: [
+      (weatherSignal(seconds, 21371, DAY_SECONDS * 1.7) - .5) * .14,
+      .88 + weatherSignal(seconds, 51719, DAY_SECONDS * 2.3) * .24,
+      (weatherSignal(seconds, 37139, DAY_SECONDS * 1.3) - .5) * .12,
+      weatherSignal(seconds, 91817, DAY_SECONDS * .8),
+    ],
     cloudOffset: [mod(seconds * .0055 + Math.sin(seconds / 170) * .15, 256), Math.sin(seconds / 390) * .18],
     waves: [Math.sin(seconds * .55), Math.cos(seconds * .55), Math.sin(seconds * .935), Math.cos(seconds * .935)],
     skyTint,
-    weather: fog > .36 ? 'mist' : coverage > .72 ? 'overcast' : coverage > .32 ? 'cloudy' : 'clear',
+    weather: rain > .12 ? 'rain' : fog > .36 ? 'mist' : coverage > .72 ? 'overcast' : coverage > .32 ? 'cloudy' : 'clear',
   };
 }
 
