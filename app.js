@@ -1,5 +1,5 @@
-import { createUniverse } from './scene.js?v=ecosystem-1';
-import { createSoundtrack } from './music.js?v=ecosystem-1';
+import { createUniverse } from './scene.js?v=ecosystem-2';
+import { createSoundtrack } from './music.js?v=ecosystem-2';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');

@@ -92,7 +92,7 @@ function pine(ctx, x, base, height, phase, time, world, distant = false) {
 }
 
 function shore(ctx, width, height, x, y, size, flicker, world) {
-  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .892], [.201, .890], [.235, .899], [.265, .914], [.293, .934], [.33, .941], [.352, .964], [.393, .978], [.43, 1]];
+  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], [.34, .944], [.365, .966], [.403, .983], [.44, 1]];
   const points = outline.map(([px, py]) => [px * width, py * height]);
   const earth = ctx.createLinearGradient(0, height * .87, 0, height);
   earth.addColorStop(0, material([11, 21, 25], [83, 92, 73], world, .5));
@@ -130,6 +130,12 @@ function fire(ctx, x, y, size, time, flicker, world) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(size, size);
+
+  // The flattened ash bed and contact shadow anchor every stone to the ledge.
+  ctx.fillStyle = 'rgba(2, 6, 8, .32)';
+  ctx.beginPath(); ctx.ellipse(.04, .25, 1.22, .39, .04, 0, TAU); ctx.fill();
+  ctx.fillStyle = material([11, 17, 17], [61, 65, 49], world, .3);
+  ctx.beginPath(); ctx.ellipse(0, .10, 1.05, .30, .04, 0, TAU); ctx.fill();
 
   const wind = (Math.sin(time * .63) * .12 + Math.sin(time * 1.07 + .7) * .045) * world.wind;
   // Smoke and sparks are fixed populations animated exclusively by scene time.
@@ -204,8 +210,8 @@ function fire(ctx, x, y, size, time, flicker, world) {
 export function drawCamp(context, { width, height, time = 0, world = {} }) {
   if (!context || width <= 0 || height <= 0) return;
   const ctx = context;
-  const x = width * .215;
-  const y = height * .896;
+  const x = width * .205;
+  const y = height * .905;
   const size = Math.max(14, Math.min(29, width * .045, height * .033));
   const flicker = .94 + Math.sin(time * 5.4) * .055 + Math.sin(time * 8.7) * .035;
   const weather = conditions(world);

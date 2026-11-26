@@ -1,4 +1,4 @@
-import { SEA_LEVEL } from './world.js?v=ecosystem-1';
+import { SEA_LEVEL } from './world.js?v=ecosystem-2';
 
 export const fragmentSource = `
 precision highp float;

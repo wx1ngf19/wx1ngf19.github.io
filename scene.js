@@ -1,6 +1,6 @@
-import { drawCamp } from './camp.js?v=ecosystem-1';
-import { fragmentSource } from './sky.js?v=ecosystem-1';
-import { sampleWorld, cloudAt, SEA_LEVEL } from './world.js?v=ecosystem-1';
+import { drawCamp } from './camp.js?v=ecosystem-2';
+import { fragmentSource } from './sky.js?v=ecosystem-2';
+import { sampleWorld, cloudAt, SEA_LEVEL } from './world.js?v=ecosystem-2';
 
 
 const vertexSource = `
