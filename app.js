@@ -1,4 +1,4 @@
-import { createUniverse } from './scene.js?v=campfire-1';
+import { createUniverse } from './scene.js?v=campfire-2';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');
@@ -29,17 +29,17 @@ function sizePointerCanvas() {
   context?.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
-function spawnMote(x, y, burst = false) {
+function spawnMote(x, y) {
   const mote = motes[nextMote];
   nextMote = (nextMote + 1) % motes.length;
   const angle = Math.random() * Math.PI * 2;
-  const speed = burst ? 18 + Math.random() * 58 : 2 + Math.random() * 8;
+  const speed = 2 + Math.random() * 8;
   Object.assign(mote, {
     x, y,
     vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed - (burst ? 0 : 5),
-    size: 0.5 + Math.random() * (burst ? 1.5 : 0.9),
-    duration: burst ? 0.8 + Math.random() * 0.9 : 0.5 + Math.random() * 0.6,
+    vy: Math.sin(angle) * speed - 5,
+    size: 0.5 + Math.random() * 0.9,
+    duration: 0.5 + Math.random() * 0.6,
     life: 1,
   });
 }
@@ -129,10 +129,7 @@ document.addEventListener('pointerleave', resetPointer);
 window.addEventListener('blur', resetPointer);
 stage.addEventListener('pointerdown', (event) => {
   if (paused || event.target.closest('button')) return;
-  universe.ripple(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
-  if (!hasMouse || event.pointerType === 'touch') return;
-  for (let i = 0; i < 22; i += 1) spawnMote(event.clientX, event.clientY, true);
-  wakePointer();
+  universe.interact(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
 }, { passive: true });
 
 function setPaused(value) {

@@ -1,3 +1,7 @@
+import { drawCamp } from './camp.js?v=campfire-2';
+
+const SEA_LEVEL = 0.205;
+
 const vertexSource = `
   attribute vec2 aPosition;
   varying vec2 vUv;
@@ -12,6 +16,7 @@ const fragmentSource = `
   varying vec2 vUv;
   uniform vec2 uResolution;
   uniform vec2 uPointer;
+  uniform vec2 uDrift;
   uniform float uTime;
   uniform vec3 uRipple;
 
@@ -42,13 +47,14 @@ const fragmentSource = `
   }
 
   vec3 sky(vec2 p) {
-    vec2 drift = uPointer * vec2(0.010, 0.006);
+    vec2 drift = uPointer * vec2(0.010, 0.006) + uDrift;
     vec2 q = p + drift;
     vec3 color = mix(vec3(0.006, 0.012, 0.022), vec3(0.017, 0.039, 0.051), 1.0 - q.y);
     float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1) * 0.045;
-    float cloud = fbm(q * 5.2 + vec2(7.0, 2.0));
-    float dust = fbm(vec2(q.x * 17.0, spine * 24.0) + 19.0);
-    float fine = noise(q * 54.0 + cloud * 2.8);
+    vec2 current = vec2(uTime * 0.009, -uTime * 0.005);
+    float cloud = fbm(q * 5.2 + vec2(7.0, 2.0) + current);
+    float dust = fbm(vec2(q.x * 17.0, spine * 24.0) + 19.0 - current * 0.7);
+    float fine = noise(q * 54.0 + cloud * 2.8 + current * 1.4);
     float band = exp(-pow(abs(spine + (cloud - 0.5) * 0.13) * 7.4, 1.45));
     float core = exp(-pow(abs(spine) * 14.0, 1.2));
     float knots = smoothstep(0.28, 0.78, cloud) * (0.45 + dust * 0.8);
@@ -59,7 +65,7 @@ const fragmentSource = `
     color *= 1.0 - rift * (0.4 + fine * 0.35);
     color += vec3(0.021, 0.045, 0.047) * cloud * exp(-abs(spine) * 2.8);
 
-    float horizonGlow = exp(-abs(q.y - 0.205) * 26.0);
+    float horizonGlow = exp(-abs(p.y - ${SEA_LEVEL}) * 26.0);
     color += vec3(0.065, 0.105, 0.11) * horizonGlow;
     color += vec3(0.12, 0.075, 0.035) * horizonGlow * exp(-pow((q.x + 0.32) * 2.5, 2.0));
     return color;
@@ -69,14 +75,14 @@ const fragmentSource = `
     vec2 uv = vUv;
     float aspect = uResolution.x / uResolution.y;
     vec2 p = vec2((uv.x - 0.5) * aspect, uv.y);
-    float horizon = 0.205;
+    float horizon = ${SEA_LEVEL};
     vec3 color;
 
     if (uv.y >= horizon) {
       color = sky(p);
     } else {
       float depth = horizon - uv.y;
-      float time = uTime * 0.32;
+      float time = uTime * 0.48;
       vec2 water = vec2(p.x * 3.2 / (depth + 0.075), 0.65 / (depth + 0.028));
       float swell = noise(water * vec2(0.55, 0.24) + vec2(time * 0.21, -time * 0.19));
       float smallWaves = noise(water * vec2(1.7, 0.8) - time * 0.17);
@@ -88,14 +94,14 @@ const fragmentSource = `
       float wideReflection = exp(-pow((p.x + 0.2) / (0.20 + depth * 1.3), 2.0));
       float distanceFade = exp(-depth * 5.0);
       color = vec3(0.008, 0.021, 0.031) + vec3(0.012, 0.021, 0.024) * wideReflection;
-      color += vec3(0.055, 0.12, 0.16) * (crest * 0.6 + fineCrest * 0.17) * wideReflection;
+      color += vec3(0.065, 0.14, 0.18) * (crest * 0.6 + fineCrest * 0.17) * wideReflection;
       color += vec3(0.32, 0.24, 0.15) * reflection * (crest * 0.7 + fineCrest * 0.22) * distanceFade;
       color += vec3(0.19, 0.25, 0.25) * reflection * exp(-depth * 35.0) * (0.25 + smallWaves * 0.25);
       color += vec3(0.09, 0.15, 0.18) * exp(-depth * 75.0);
 
       float age = uTime - uRipple.z;
       if (age >= 0.0 && age < 5.0) {
-        vec2 rippleCenter = vec2((uRipple.x - 0.5) * aspect, min(uRipple.y, horizon - 0.025));
+        vec2 rippleCenter = vec2((uRipple.x - 0.5) * aspect, uRipple.y);
         float radius = length((p - rippleCenter) * vec2(1.0, 1.7));
         float ring = sin((radius - age * 0.13) * 100.0);
         float envelope = exp(-pow((radius - age * 0.13) * 19.0, 2.0)) * exp(-age * 1.1);
@@ -152,7 +158,7 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uTime', 'uRipple'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple'].map((key) => [key, gl.getUniformLocation(program, key)]));
 
   return {
     resize(width, height) {
@@ -163,9 +169,10 @@ function makeRenderer(canvas) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.uResolution, width, height);
     },
-    draw(time, pointer, ripple) {
+    draw(time, pointer, ripple, drift) {
       gl.uniform1f(uniforms.uTime, time);
       gl.uniform2f(uniforms.uPointer, pointer.x, pointer.y);
+      gl.uniform2f(uniforms.uDrift, drift.x, drift.y);
       gl.uniform3f(uniforms.uRipple, ripple.x, ripple.y, ripple.time);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
@@ -205,7 +212,9 @@ export function createUniverse(surface, starCanvas) {
   let resizing = 0;
   const pointer = { x: 0, y: 0 };
   const target = { x: 0, y: 0 };
+  const drift = { x: 0, y: 0 };
   const ripple = { x: 0.5, y: 0.2, time: -100 };
+  const starlight = { x: 0.5, y: 0.5, time: -100 };
 
   function prepareStars() {
     const random = randomGenerator(19870921);
@@ -227,119 +236,6 @@ export function createUniverse(surface, starCanvas) {
         warm: index % 7 === 0,
       };
     });
-  }
-
-  function drawCamp() {
-    const x = width * 0.215;
-    const y = height * 0.897;
-    const size = Math.max(12, Math.min(25, width * 0.04, height * 0.027));
-    const flicker = 0.91 + Math.sin(time * 5.4) * 0.045 + Math.sin(time * 8.7) * 0.035;
-    const glow = context.createRadialGradient(x, y - size * 0.4, 0, x, y, size * 7);
-    glow.addColorStop(0, `rgba(238, 125, 49, ${0.16 * flicker})`);
-    glow.addColorStop(0.35, 'rgba(190, 91, 35, .035)');
-    glow.addColorStop(1, 'rgba(190, 91, 35, 0)');
-    context.fillStyle = glow;
-    context.fillRect(x - size * 7, y - size * 7, size * 14, size * 14);
-
-    const shore = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .892], [.201, .89], [.235, .899], [.265, .914], [.293, .934], [.33, .941], [.352, .964], [.393, .978], [.43, 1]];
-    context.fillStyle = '#050b10';
-    context.beginPath();
-    shore.forEach(([sx, sy], index) => index ? context.lineTo(sx * width, sy * height) : context.moveTo(sx * width, sy * height));
-    context.lineTo(0, height);
-    context.closePath();
-    context.fill();
-    context.strokeStyle = 'rgba(95, 112, 108, .22)';
-    context.lineWidth = 0.7;
-    context.beginPath();
-    shore.slice(0, 11).forEach(([sx, sy], index) => index ? context.lineTo(sx * width, sy * height) : context.moveTo(sx * width, sy * height));
-    context.stroke();
-
-    function pine(px, base, tall, seed) {
-      const random = randomGenerator(seed);
-      context.fillStyle = '#040a0e';
-      context.beginPath();
-      context.moveTo(px - tall * .012, base);
-      context.lineTo(px - tall * .006, base - tall);
-      context.lineTo(px + tall * .011, base);
-      context.fill();
-      for (let row = 0; row < 10; row += 1) {
-        const down = .10 + row * .075;
-        const spread = tall * (.035 + down * .24);
-        const by = base - tall * (1 - down);
-        context.beginPath();
-        context.moveTo(px, by - tall * .075);
-        context.lineTo(px - spread * (.85 + random() * .25), by + tall * .085);
-        context.lineTo(px - spread * .36, by + tall * .063);
-        context.lineTo(px - spread * .66, by + tall * .10);
-        context.lineTo(px, by + tall * .047);
-        context.lineTo(px + spread * .82, by + tall * .10);
-        context.lineTo(px + spread * .50, by + tall * .055);
-        context.lineTo(px + spread * (.9 + random() * .25), by + tall * .067);
-        context.closePath();
-        context.fill();
-      }
-    }
-    pine(width * .012, height * .878, Math.min(height * .285, width * .40), 41);
-    pine(width * .078, height * .883, Math.min(height * .172, width * .23), 19);
-    pine(width * .118, height * .887, Math.min(height * .102, width * .15), 63);
-
-    // Small, irregular stones catch the firelight along the ledge.
-    context.fillStyle = '#121411';
-    context.beginPath();
-    context.moveTo(x - size * 1.9, y + size * .3);
-    context.lineTo(x - size * 1.7, y - size * .04);
-    context.lineTo(x - size * 1.35, y - size * .12);
-    context.lineTo(x - size * 1.04, y + size * .25);
-    context.closePath();
-    context.fill();
-    context.strokeStyle = 'rgba(168, 106, 58, .28)';
-    context.lineWidth = .8;
-    context.stroke();
-    context.lineCap = 'round';
-    context.strokeStyle = '#6b4229';
-    context.lineWidth = size * .15;
-    context.beginPath();
-    context.moveTo(x - size * .45, y + size * .06);
-    context.lineTo(x + size * .46, y + size * .31);
-    context.moveTo(x - size * .43, y + size * .28);
-    context.lineTo(x + size * .38, y + size * .03);
-    context.stroke();
-
-    context.save();
-    context.translate(x, y);
-    context.scale(size, size);
-    const sway = Math.sin(time * 4.3) * .1;
-    const flame = context.createLinearGradient(0, -1.25, 0, .2);
-    flame.addColorStop(0, '#e99748');
-    flame.addColorStop(.55, '#ef8238');
-    flame.addColorStop(1, '#bd4b23');
-    context.fillStyle = flame;
-    context.beginPath();
-    context.moveTo(-.34, .06);
-    context.bezierCurveTo(-.7, -.38, -.10, -.65, -.14 + sway, -1.25 * flicker);
-    context.bezierCurveTo(.22, -.94, .07, -.63, .20, -.54);
-    context.bezierCurveTo(.35, -.72, .40, -.80, .40 + sway, -.86);
-    context.bezierCurveTo(.62, -.32, .57, -.04, .28, .11);
-    context.closePath();
-    context.fill();
-    context.fillStyle = '#ffda8f';
-    context.beginPath();
-    context.moveTo(-.15, .03);
-    context.quadraticCurveTo(-.25, -.25, .02 + sway * .5, -.65 * flicker);
-    context.quadraticCurveTo(.04, -.31, .24, -.11);
-    context.quadraticCurveTo(.13, .15, -.15, .03);
-    context.fill();
-    context.restore();
-
-    for (let index = 0; index < 12; index += 1) {
-      const phase = (time * (.13 + index * .004) + index * .273) % 1;
-      const ex = x + Math.sin(phase * 5 + index * 3) * size * (.3 + phase * .8) + phase * size * .7;
-      const ey = y - size * (.7 + phase * 4.8);
-      context.fillStyle = `rgba(240, ${145 + index % 4 * 15}, 74, ${Math.sin(phase * Math.PI) * .48})`;
-      context.beginPath();
-      context.arc(ex, ey, .45 + index % 3 * .17, 0, Math.PI * 2);
-      context.fill();
-    }
   }
 
   function drawStars() {
@@ -366,13 +262,16 @@ export function createUniverse(surface, starCanvas) {
     const pointerY = (.5 - pointer.y * .5) * height;
     const seeking = !paused && Math.abs(target.x) + Math.abs(target.y) > .005;
     for (const star of stars) {
-      const x = star.x + pointer.x * star.depth * 13;
-      const y = star.y - pointer.y * star.depth * 9;
+      const depth = .65 + star.depth * .35;
+      const movingX = star.x + pointer.x * star.depth * 13 - drift.x * height * depth;
+      const x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
+      const y = star.y - pointer.y * star.depth * 9 + drift.y * height * depth;
       if (y < 5 || y > height * 0.790) continue;
       const twinkle = 0.83 + Math.sin(time * 0.45 + star.phase) * 0.17;
       const distance = Math.hypot(x - pointerX, y - pointerY);
       const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
-      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35);
+      const edgeFade = Math.min(1, y / 12, (height * .790 - y) / 12);
+      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade;
       if (proximity > 0 && star.alpha > .36) near.push({ x, y, distance });
       const color = star.warm ? '222, 199, 155' : '193, 215, 228';
       context.fillStyle = `rgba(${color}, ${alpha})`;
@@ -411,9 +310,36 @@ export function createUniverse(surface, starCanvas) {
       }
     }
 
-    const meteorPhase = (time + 8) % 23;
-    if (meteorPhase < 1.4 && !paused) {
-      const progress = meteorPhase / 1.4;
+    const lightAge = time - starlight.time;
+    if (lightAge >= 0 && lightAge < 2.4) {
+      const x = starlight.x * width;
+      const y = (1 - starlight.y) * height;
+      const fade = Math.exp(-lightAge * 2.0);
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, width, height * (1 - SEA_LEVEL));
+      context.clip();
+      const halo = context.createRadialGradient(x, y, 0, x, y, 8 + lightAge * 14);
+      halo.addColorStop(0, `rgba(235, 222, 186, ${fade * .23})`);
+      halo.addColorStop(1, 'rgba(235, 222, 186, 0)');
+      context.fillStyle = halo;
+      context.fillRect(x - 44, y - 44, 88, 88);
+      for (let index = 0; index < 16; index += 1) {
+        const angle = index * 2.39996;
+        const radius = 3 + lightAge * (15 + index % 5 * 7);
+        const px = x + Math.cos(angle) * radius;
+        const py = y + Math.sin(angle) * radius * .8;
+        context.fillStyle = `rgba(231, 218, 181, ${fade * .82})`;
+        context.beginPath();
+        context.arc(px, py, (.7 + index % 3 * .3) * Math.sqrt(fade), 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+    }
+
+    const meteorPhase = (time + 17) % 19;
+    if (meteorPhase < 1.8 && !paused) {
+      const progress = meteorPhase / 1.8;
       const x = width * (0.82 - progress * 0.23);
       const y = height * (0.13 + progress * 0.16);
       const tailX = width * 0.09;
@@ -428,11 +354,14 @@ export function createUniverse(surface, starCanvas) {
       context.lineTo(x + tailX, y + tailY);
       context.stroke();
     }
-    drawCamp();
+    drawCamp(context, { width, height, time });
   }
 
   function draw() {
-    renderer?.draw(time, pointer, ripple);
+    // One bounded camera drift keeps the galaxy and its stars travelling together.
+    drift.x = Math.sin(time * .035) * .032 + Math.sin(time * .011) * .012;
+    drift.y = Math.sin(time * .027) * .020;
+    renderer?.draw(time, pointer, ripple, drift);
     drawStars();
   }
 
@@ -508,11 +437,12 @@ export function createUniverse(surface, starCanvas) {
 
   return {
     setPointer(x, y) { target.x = x; target.y = y; },
-    ripple(x, y) {
+    interact(x, y) {
       if (paused) return;
-      ripple.x = x;
-      ripple.y = y;
-      ripple.time = time;
+      const effect = y < SEA_LEVEL ? ripple : starlight;
+      effect.x = x;
+      effect.y = y;
+      effect.time = time;
     },
     setPaused(value) {
       paused = value;
