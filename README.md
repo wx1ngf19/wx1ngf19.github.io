@@ -53,5 +53,6 @@ and [NOAA's cloud lightning explanation](https://www.nesdis.noaa.gov/about/k-12-
 
 ## Publication
 
-Pushing `main` runs [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
-and publishes the static site to GitHub Pages.
+Pushing `main` publishes this directory through GitHub Pages' built-in
+`pages build and deployment` workflow. The [.nojekyll](.nojekyll) file keeps the
+site static; no custom build or duplicate deployment workflow is needed.
