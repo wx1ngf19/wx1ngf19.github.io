@@ -1,11 +1,12 @@
-import { soundtracks } from './assets/audio/library.js?v=woodland-1';
-import { sampleWorld } from './world.js?v=woodland-1';
+import { soundtracks } from './assets/audio/library.js?v=reverie-3';
+import { sampleWorld } from './world.js?v=reverie-3';
 
 const LISTENING_VOLUME = .42;
 
 export function createSoundtrack(audio, button) {
   const root = document.documentElement;
   const clickWave = button.querySelector('.music-click-wave');
+  const credit = document.querySelector('#music-credit');
   let wanted = false;
   let revision = 0;
   let fadeFrame = 0;
@@ -52,7 +53,14 @@ export function createSoundtrack(audio, button) {
     button.setAttribute('aria-busy', String(state === 'loading'));
     const label = state === 'loading' ? '取消加载背景音乐' : playing ? '暂停背景音乐' : state === 'error' ? '重试播放背景音乐' : '播放背景音乐';
     button.setAttribute('aria-label', currentTrack ? `${label}：${currentTrack.title}，${currentTrack.artist}` : label);
-    button.title = state === 'loading' ? 'Cancel music' : playing ? 'Pause music' : state === 'error' ? 'Retry music' : 'Play music';
+    const action = state === 'loading' ? 'Cancel music' : playing ? 'Pause music' : state === 'error' ? 'Retry music' : 'Play music';
+    button.title = currentTrack ? `${action} — ${currentTrack.title} · ${currentTrack.artist}` : action;
+    if (credit && currentTrack) {
+      credit.hidden = false;
+      credit.href = new URL(`./assets/audio/credits.html#${encodeURIComponent(currentTrack.id)}`, document.baseURI).href;
+      credit.title = `${currentTrack.title} · ${currentTrack.artist} · ${currentTrack.license}`;
+      credit.setAttribute('aria-label', `音乐来源与署名：${currentTrack.title}，${currentTrack.artist}`);
+    }
   }
 
   function cancelFade() {

@@ -1,3 +1,5 @@
+import { cabinGeometry as house } from './cabin-geometry.js?v=reverie-3';
+
 const TAU = Math.PI * 2;
 
 const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
@@ -92,10 +94,37 @@ function pine(ctx, x, base, height, phase, time, world, distant = false) {
   }
 }
 
-function shore(ctx, width, height, x, y, size, flicker, world) {
+function shoreOutline(width, height) {
   const compact = width < 1000 && width / height < 1.65;
-  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], ...(compact ? [[.35, .931], [.40, .935], [.45, .946], [.50, .960], [.55, .980], [.59, 1]] : [[.34, .944], [.365, .966], [.403, .983], [.44, 1]])];
-  const points = outline.map(([px, py]) => [px * width, py * height]);
+  return [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], ...(compact ? [[.35, .931], [.40, .935], [.45, .946], [.50, .960], [.55, .980], [.59, 1]] : [[.34, .944], [.365, .966], [.403, .983], [.44, 1]])];
+}
+
+let lastCabinLayout;
+export function cabinLayout(width, height) {
+  if (lastCabinLayout?.viewportWidth === width && lastCabinLayout?.viewportHeight === height) return lastCabinLayout;
+  const compact = width < 1000 && width / height < 1.65;
+  const cabinWidth = Math.min(210, Math.max(98, width * .145), height * .44, width * .31);
+  const scale = cabinWidth / 100;
+  const x = width * (compact ? .35 : .092);
+  const outline = shoreOutline(width, height);
+  const groundAt = screenX => {
+    const position = screenX / width;
+    for (let index = 1; index < outline.length; index += 1) {
+      if (position > outline[index][0]) continue;
+      const a = outline[index - 1], b = outline[index];
+      return (a[1] + (b[1] - a[1]) * (position - a[0]) / (b[0] - a[0])) * height;
+    }
+    return height;
+  };
+  // The receding foundation follows the same perspective as the roof and walls.
+  let y = height * (compact ? .975 : .916);
+  for (const [px, py] of house.foundation) y = Math.max(y, groundAt(x + px * scale) - py * scale + 2);
+  lastCabinLayout = { viewportWidth: width, viewportHeight: height, width: cabinWidth, scale, x, y };
+  return lastCabinLayout;
+}
+
+function shore(ctx, width, height, x, y, size, flicker, world) {
+  const points = shoreOutline(width, height).map(([px, py]) => [px * width, py * height]);
   const earth = ctx.createLinearGradient(0, height * .87, 0, height);
   earth.addColorStop(0, material([11, 21, 25], [83, 92, 73], world, .5));
   earth.addColorStop(.55, material([7, 15, 20], [59, 71, 59], world, .35));
@@ -129,11 +158,7 @@ function shore(ctx, width, height, x, y, size, flicker, world) {
 }
 
 function cabin(ctx, width, height, world) {
-  const compact = width < 1000 && width / height < 1.65;
-  const cabinWidth = Math.min(210, Math.max(98, width * .145), height * .44);
-  const scale = cabinWidth / 100;
-  const x = width * (compact ? .35 : .092);
-  const y = height * (compact ? .975 : .916);
+  const { scale, x, y } = cabinLayout(width, height);
   const light = world.houseLight;
   ctx.save();
   ctx.translate(x, y);
@@ -143,43 +168,50 @@ function cabin(ctx, width, height, world) {
   ctx.fillStyle = 'rgba(2, 8, 10, .28)';
   ctx.beginPath(); ctx.ellipse(0, 3, 52, 8, -.015, 0, TAU); ctx.fill();
   glow(ctx, -3, 5, 48, [[0, `rgba(244, 180, 91, ${.14 * light})`], [.45, `rgba(216, 143, 62, ${.055 * light})`], [1, 'rgba(216, 143, 62, 0)']], .23);
-  polygon(ctx, [[-47, -1], [18, -2], [49, -6], [49, 0], [19, 5], [-47, 5]], material([21, 32, 31], [112, 122, 103], world, .4));
-  polygon(ctx, [[18, -2], [49, -6], [49, 0], [19, 5]], material([15, 28, 28], [78, 94, 83], world, .4));
+  polygon(ctx, house.foundationTop, material([29, 39, 35], [123, 131, 112], world, .4));
+  polygon(ctx, house.foundationFront, material([21, 32, 31], [112, 122, 103], world, .4));
+  polygon(ctx, house.foundationSide, material([15, 28, 28], [78, 94, 83], world, .4));
   ctx.strokeStyle = material([13, 24, 25], [63, 79, 69], world, .4);
   ctx.lineWidth = .65;
   ctx.beginPath();
   ctx.moveTo(-29, 0); ctx.lineTo(-31, 5); ctx.moveTo(-7, 0); ctx.lineTo(-5, 5);
-  ctx.moveTo(14, 0); ctx.lineTo(15, 4); ctx.moveTo(34, -3); ctx.lineTo(35, 2); ctx.stroke();
+  ctx.moveTo(14, 0); ctx.lineTo(15, 4); ctx.moveTo(34, -7); ctx.lineTo(34, -1);
+  ctx.moveTo(44, -10.8); ctx.lineTo(44, -4.8); ctx.stroke();
 
   // A gable, one timber facade and a shaded side wall establish modest volume.
-  polygon(ctx, [[-44, -38], [17, -38], [17, 0], [-44, 0]], material([23, 32, 30], [108, 101, 75], world, .4));
-  polygon(ctx, [[17, -38], [46, -29], [46, -5], [17, 0]], material([15, 27, 27], [72, 83, 68], world, .4));
-  polygon(ctx, [[-44, -38], [-14, -65], [17, -38]], material([27, 35, 31], [123, 111, 78], world, .4));
+  // Opaque underpainting prevents antialiased shared edges from exposing the sky.
+  polygon(ctx, house.bodySilhouette, material([18, 29, 28], [88, 91, 69], world, .4));
+  polygon(ctx, house.facade, material([23, 32, 30], [108, 101, 75], world, .4));
+  polygon(ctx, house.side, material([15, 27, 27], [72, 83, 68], world, .4));
+  polygon(ctx, house.gable, material([27, 35, 31], [123, 111, 78], world, .4));
   ctx.strokeStyle = material([11, 24, 25], [71, 79, 61], world, .4);
   ctx.lineWidth = .7;
   for (let row = 0; row < 5; row += 1) {
     const by = -34 + row * 7;
     ctx.beginPath(); ctx.moveTo(-43, by); ctx.lineTo(17, by);
-    ctx.lineTo(45, by + 7); ctx.stroke();
+    ctx.lineTo(46, by - 11); ctx.stroke();
   }
   ctx.strokeStyle = material([31, 42, 35], [151, 137, 94], world, .4);
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(-43, -37); ctx.lineTo(-43, 0);
   ctx.moveTo(17, -37); ctx.lineTo(17, -.5); ctx.stroke();
 
-  // The roof is slate rather than a bright accent; a narrow chimney stays still.
-  polygon(ctx, [[-50, -40], [-14, -71], [-14, -65], [-44, -35]], material([18, 30, 33], [87, 102, 96], world, .4));
-  polygon(ctx, [[-14, -71], [20, -61], [50, -31], [17, -40]], material([13, 26, 30], [58, 77, 75], world, .4));
+  // Roof planes share their ridge and cover the gable's complete sloping edges.
+  polygon(ctx, house.roofSilhouette, material([13, 26, 30], [58, 77, 75], world, .4));
+  polygon(ctx, house.roofLeft, material([18, 30, 33], [87, 102, 96], world, .4));
+  polygon(ctx, house.roofRight, material([13, 26, 30], [58, 77, 75], world, .4));
+  polygon(ctx, house.roofFrontEdge, material([20, 33, 34], [99, 114, 102], world, .4));
+  polygon(ctx, house.roofSideEdge, material([7, 22, 26], [39, 60, 58], world, .4));
   ctx.strokeStyle = material([35, 48, 47], [137, 154, 137], world, .4);
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(-49, -40); ctx.lineTo(-14, -71); ctx.lineTo(20, -61); ctx.stroke();
-  ctx.strokeStyle = material([6, 18, 23], [37, 57, 57], world, .4);
-  ctx.lineWidth = 1.3;
-  ctx.beginPath(); ctx.moveTo(-49, -39); ctx.lineTo(-43, -35);
-  ctx.moveTo(17, -40); ctx.lineTo(50, -31); ctx.stroke();
-  polygon(ctx, [[25, -75], [32, -73], [32, -49], [25, -51]], material([27, 38, 36], [119, 127, 108], world, .4));
-  polygon(ctx, [[32, -73], [36, -75], [36, -51], [32, -49]], material([17, 31, 31], [76, 96, 88], world, .4));
-  polygon(ctx, [[23, -77], [34, -78], [38, -75], [31, -72], [23, -74]], material([35, 46, 41], [152, 156, 132], world, .4));
+  ctx.lineWidth = .8;
+  ctx.beginPath(); ctx.moveTo(...house.ridge[0]); ctx.lineTo(...house.ridge[1]); ctx.stroke();
+  // The shaft is cut by the same roof plane; flashing covers its intersection.
+  polygon(ctx, house.flashing, material([11, 25, 29], [56, 76, 74], world, .4));
+  polygon(ctx, house.chimneySilhouette, material([22, 34, 32], [105, 119, 102], world, .4));
+  polygon(ctx, house.chimneyFront, material([27, 38, 36], [119, 127, 108], world, .4));
+  polygon(ctx, house.chimneySide, material([17, 31, 31], [76, 96, 88], world, .4));
+  polygon(ctx, house.chimneyCapEdge, material([24, 36, 34], [101, 116, 99], world, .4));
+  polygon(ctx, house.chimneyCap, material([35, 46, 41], [152, 156, 132], world, .4));
 
   const frame = material([24, 35, 31], [96, 85, 57], world, .35);
   polygon(ctx, [[-37, -32], [-11, -32], [-11, -8], [-37, -8]], frame);

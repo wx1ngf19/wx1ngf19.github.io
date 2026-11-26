@@ -1,8 +1,8 @@
-import { drawCamp } from './camp.js?v=woodland-2';
-import { drawBirds } from './fauna.js?v=woodland-1';
-import { drawRain } from './atmosphere.js?v=woodland-1';
-import { fragmentSource } from './sky.js?v=woodland-1';
-import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from './world.js?v=woodland-1';
+import { drawCamp } from './camp.js?v=reverie-3';
+import { drawBirds } from './fauna.js?v=reverie-3';
+import { drawRain } from './atmosphere.js?v=reverie-3';
+import { fragmentSource } from './sky.js?v=reverie-3';
+import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from './world.js?v=reverie-3';
 
 
 const vertexSource = `
@@ -56,7 +56,7 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uGalaxy', 'uCosmos', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uCloudForm', 'uGalaxy', 'uCosmos', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
   const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
   let pixelBudget = maxPixels;
   let viewportWidth = 1, viewportHeight = 1;
@@ -97,6 +97,7 @@ function makeRenderer(canvas) {
       gl.uniform4f(uniforms.uWorld, world.daylight, world.night, world.twilight, world.fire);
       gl.uniform4f(uniforms.uWeather, world.coverage, world.fog, world.wind, world.humidity);
       gl.uniform2f(uniforms.uCloudOffset, ...world.cloudOffset);
+      gl.uniform4f(uniforms.uCloudForm, ...world.cloudForm);
       gl.uniform2f(uniforms.uGalaxy, world.galaxyAngle * motion, world.galaxySpin);
       gl.uniform4f(uniforms.uCosmos, ...world.cosmos);
       gl.uniform4f(uniforms.uPhenomena, world.aurora, world.nightCloud, world.seaGlow, world.rainbow);

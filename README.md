@@ -11,7 +11,8 @@ python3 -m http.server 8000 --bind 127.0.0.1
 
 Open `http://127.0.0.1:8000`. Click the personal emblem to start or pause music.
 If playback fails, click again to retry playback. Leaving the tab pauses
-music; returning keeps it quiet until the next click.
+music; returning keeps it quiet until the next click. After the first play request,
+a small information link beside the emblem opens the current track’s credits.
 
 ## Structure
 
@@ -23,9 +24,11 @@ music; returning keeps it quiet until the next click.
 - [atmosphere.js](atmosphere.js): aurora, night-shining clouds, rainbow and rain.
 - [fauna.js](fauna.js): occasional bird flocks tied to the world clock.
 - [camp.js](camp.js): shoreline, trees, house and campfire.
+- [cabin-geometry.js](cabin-geometry.js): shared wall, roof, foundation and chimney geometry.
 - [music.js](music.js): playback, shuffled queues and dawn/dusk fades.
 - [assets/audio/library.js](assets/audio/library.js): twelve daytime and twelve nighttime tracks.
-- [assets/audio/CREDITS.txt](assets/audio/CREDITS.txt): composers, official releases and CC0 licenses.
+- [assets/audio/credits.html](assets/audio/credits.html): track attributions and license links.
+- [assets/audio/CREDITS.txt](assets/audio/CREDITS.txt): the same music sources in plain text.
 
 ## World
 
@@ -33,8 +36,18 @@ A full fictional day lasts 36 real minutes. Its state is calculated from absolut
 UTC time, so closing or refreshing the page does not restart the world. Weather,
 house lighting, bird visits and celestial events share that clock. Music queues
 are shuffled separately for each visit and audio loads on demand after a play request.
+The day and night libraries contain 24 complete instrumental recordings by
+24 different creators, with a focus on slow piano, acoustic and ambient music.
+Music keeps its individual CC0, CC BY or CC BY-NC license; the Chinese pianist
+Shuwen Zhang’s nocturne is licensed for noncommercial use. See the track credits
+for attribution, source links and terms.
 
-Solar paths and daily conditions evolve continuously. Rare appearances depend on
+Solar paths and daily conditions evolve continuously. Sparse clouds drift and
+reshape, with their density, softness and brightness following the weather.
+The cabin uses a common depth projection; roof edges meet the gable, the chimney
+base follows the roof slope, and every foundation corner remains inside the shore.
+
+Rare appearances depend on
 light and weather: rain and distant cloud lightning need humid cloud cover;
 rainbows need recent rain and a low sun; aurora and luminous waves appear at night;
 silver-blue night-shining clouds have a narrow twilight window. Lower clouds and

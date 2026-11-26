@@ -1,5 +1,5 @@
-import { SEA_LEVEL } from './world.js?v=woodland-1';
-import { atmosphereSource } from './atmosphere.js?v=woodland-1';
+import { SEA_LEVEL } from './world.js?v=reverie-3';
+import { atmosphereSource } from './atmosphere.js?v=reverie-3';
 
 export const fragmentSource = `
 precision highp float;
@@ -7,7 +7,7 @@ varying vec2 vUv;
 uniform vec2 uResolution, uPointer, uDrift, uCloudOffset, uGalaxy;
 uniform float uTime, uMotion;
 uniform vec3 uRipple, uSun;
-uniform vec4 uMoon, uWorld, uWeather, uWaves, uCosmos, uPhenomena, uSkyFlow;
+uniform vec4 uMoon, uWorld, uWeather, uWaves, uCosmos, uPhenomena, uSkyFlow, uCloudForm;
 
 float hash(vec2 p) {
   vec2 cell = mod(p, 256.0);
@@ -89,14 +89,17 @@ vec3 sky(vec2 p, float aspect) {
     color = mix(color, max(color, moonColor), lunarOpacity);
   }
 
-  vec2 cloudUV = vec2(p.x / (h * 0.6 + 0.18), 1.0 / (h * 0.7 + 0.12)) * 1.4 + uCloudOffset;
+  vec2 cloudUV = vec2(p.x / (h * 0.6 + 0.18), 1.0 / (h * 0.7 + 0.12)) * 1.4 * uCloudForm.xy + uCloudOffset;
   float body = fbm(cloudUV);
   float detail = noise(cloudUV * 3.0);
-  float threshold = 0.73 - uWeather.x * 0.53;
-  float clouds = smoothstep(threshold, threshold + 0.18, body + detail * 0.1) * smoothstep(0.0, 0.055, h);
+  float threshold = 0.76 - uWeather.x * 0.50;
+  float clouds = smoothstep(threshold, threshold + uCloudForm.z, body + detail * 0.1) * smoothstep(0.0, 0.055, h);
   float shade = smoothstep(0.20, 0.75, body);
   vec3 cloudDay = mix(vec3(0.91, 0.92, 0.89), vec3(0.45, 0.53, 0.59), shade * (0.4 + uWeather.x * 0.6));
+  cloudDay *= 0.86 + uCloudForm.w * 0.17;
+  cloudDay += mix(vec3(-0.012, 0.004, 0.020), vec3(0.025, 0.012, -0.005), uCloudForm.w) * (1.0 - shade);
   vec3 cloudNight = mix(vec3(0.045, 0.065, 0.087), vec3(0.016, 0.030, 0.045), shade);
+  cloudNight *= 0.88 + uCloudForm.w * 0.20 + max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z)) * 0.28;
   vec3 cloudColor = mix(cloudNight, cloudDay, day);
   cloudColor += tint * dusk * towardSun * (1.0 - shade) * 0.58;
   float cloudFlash = uSkyFlow.y * exp(-pow((p.x - 0.36) * 2.4, 2.0));

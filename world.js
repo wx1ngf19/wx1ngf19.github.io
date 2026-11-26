@@ -25,7 +25,7 @@ function weatherSignal(seconds, seed, duration = 420) {
 
 function weatherAt(seconds) {
   const character = weatherSignal(seconds, 75139, DAY_SECONDS * 1.37);
-  const coverage = clamp(.06 + weatherSignal(seconds, 19870921) * .82 + (character - .5) * .20, .04, .97);
+  const coverage = clamp(.035 + weatherSignal(seconds, 19870921) ** 1.85 * .84 + (character - .5) * .12, .025, .94);
   const humidity = .36 + weatherSignal(seconds, 11997, 570) * .63;
   const rain = smooth(.65, .91, coverage) * smooth(.68, .94, humidity)
     * (.35 + weatherSignal(seconds, 37519, 290) * .65);
@@ -73,6 +73,7 @@ export function sampleWorld(now = Date.now()) {
   const flashAge = mod(seconds, 31) - 4 - random(stormSlot, 71913) * 21;
   const lightning = storm * smooth(0, .09, flashAge) * (1 - smooth(.09, .85, flashAge));
   const skyPhase = mod(seconds * .018, TAU);
+  const cloudShape = weatherSignal(seconds, 23719, DAY_SECONDS * .63);
   const skyTint = [clamp(mix(.065, .65, daylight) + twilight * .12), clamp(mix(.10, .75, daylight) + twilight * .035), mix(.15, .78, daylight)];
   return {
     seconds, phase, altitude, daylight, night, twilight, coverage, humidity, wind, fog, houseLight,
@@ -91,6 +92,7 @@ export function sampleWorld(now = Date.now()) {
       weatherSignal(seconds, 91817, DAY_SECONDS * .8),
     ],
     cloudOffset: [mod(seconds * .0055 + Math.sin(seconds / 170) * .15, 256), Math.sin(seconds / 390) * .18],
+    cloudForm: [mix(.62, 1.35, cloudShape), mix(1.65, .78, cloudShape), mix(.10, .22, cloudShape), weatherSignal(seconds, 15831, 270)],
     waves: [Math.sin(seconds * .55), Math.cos(seconds * .55), Math.sin(seconds * .935), Math.cos(seconds * .935)],
     skyTint,
     weather: rain > .12 ? 'rain' : fog > .36 ? 'mist' : coverage > .72 ? 'overcast' : coverage > .32 ? 'cloudy' : 'clear',
@@ -120,9 +122,9 @@ function fbm(x, y) {
 }
 export function cloudAt(x, uvY, aspect, world) {
   const h = Math.max(0, (uvY - SEA_LEVEL) / (1 - SEA_LEVEL));
-  const cx = (x - .5) * aspect / (h * .6 + .18) * 1.4 + world.cloudOffset[0];
-  const cy = 1 / (h * .7 + .12) * 1.4 + world.cloudOffset[1];
+  const cx = (x - .5) * aspect / (h * .6 + .18) * 1.4 * world.cloudForm[0] + world.cloudOffset[0];
+  const cy = 1 / (h * .7 + .12) * 1.4 * world.cloudForm[1] + world.cloudOffset[1];
   const density = fbm(cx, cy) + noise(cx * 3, cy * 3) * .1;
-  const threshold = .73 - world.coverage * .53;
-  return smooth(threshold, threshold + .18, density) * smooth(0, .055, h);
+  const threshold = .76 - world.coverage * .50;
+  return smooth(threshold, threshold + world.cloudForm[2], density) * smooth(0, .055, h);
 }
