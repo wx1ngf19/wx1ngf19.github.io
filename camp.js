@@ -1,19 +1,46 @@
 const TAU = Math.PI * 2;
 
-function polygon(ctx, points, fill, stroke, lineWidth = 1) {
+const clamp = (value, low = 0, high = 1) => Math.max(low, Math.min(high, value));
+
+function rgb(values) {
+  return `rgb(${values.map(value => Math.round(clamp(value, 0, 255))).join(', ')})`;
+}
+
+function blend(a, b, amount) {
+  return a.map((value, index) => value + (b[index] - value) * amount);
+}
+
+function material(night, day, world, haze = 1, heated = null) {
+  let color = blend(night, day, world.daylight);
+  if (heated) color = blend(color, heated, world.fire * (1 - world.daylight * .72));
+  return rgb(blend(color, world.skyTint, clamp(world.fog * haze * .5 + world.daylight * .025)));
+}
+
+function conditions(world) {
+  const daylight = clamp(world.daylight ?? 0);
+  const night = clamp(world.night ?? 1 - daylight);
+  let skyTint = world.skyTint;
+  if (!Array.isArray(skyTint) || skyTint.length < 3 || !skyTint.slice(0, 3).every(Number.isFinite)) {
+    skyTint = blend([20, 39, 48], [167, 185, 178], daylight * (1 - night * .08));
+  } else {
+    skyTint = skyTint.slice(0, 3);
+    if (Math.max(...skyTint) <= 1) skyTint = skyTint.map(value => value * 255);
+  }
+  return {
+    daylight,
+    night,
+    fog: clamp(world.fog ?? 0),
+    wind: clamp(world.wind ?? 1, 0, 3),
+    fire: clamp(world.fire ?? 1),
+    skyTint,
+  };
+}
+
+function polygon(ctx, points, fill) {
   ctx.beginPath();
   points.forEach(([x, y], index) => index ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
   ctx.closePath();
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke(); }
-}
-
-function line(ctx, points, color, width = 1) {
-  ctx.beginPath();
-  points.forEach(([x, y], index) => index ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.stroke();
 }
 
 function glow(ctx, x, y, radius, stops, stretch = 1) {
@@ -27,265 +54,177 @@ function glow(ctx, x, y, radius, stops, stretch = 1) {
   ctx.restore();
 }
 
-function pine(ctx, x, base, height, phase, time) {
-  const breeze = Math.sin(time * .66 + phase) * 1.5 + Math.sin(time * 1.07 + phase) * .6;
-  const tone = phase > 2 ? '#0a1519' : '#050d12';
-  polygon(ctx, [[x - 1.5, base], [x + breeze, base - height], [x + 2.2, base]], '#101a1a');
+function pine(ctx, x, base, height, phase, time, world, distant = false) {
+  const wind = (Math.sin(time * .67 + phase) * 1.65 + Math.sin(time * 1.13 + phase * .7) * .55) * world.wind;
+  const sway = height * .012 * wind;
+  const tone = distant ? material([12, 24, 29], [65, 91, 78], world, 1.3) : material([4, 12, 17], [33, 65, 44], world, .6);
+  const trunk = distant ? material([17, 29, 32], [81, 87, 64], world, 1.3) : material([10, 20, 24], [78, 76, 52], world, .6);
+  const branchLight = material([36, 39, 30], [74, 105, 62], world, .6, [80, 68, 39]);
+  polygon(ctx, [[x - height * .012, base], [x + sway, base - height], [x + height * .012, base]], trunk);
   for (let row = 0; row < 11; row += 1) {
     const down = .09 + row * .073;
-    const spread = height * (.025 + down * .21);
+    const spread = height * (.025 + down * .22);
     const y = base - height * (1 - down);
-    const tip = x + breeze * (1 - down) ** 2;
-    const uneven = Math.sin(row * 12.7 + phase) * .1;
+    const tip = x + sway * (1 - down) ** 2;
+    const uneven = Math.sin(row * 12.7 + phase) * .13;
+    const flutter = Math.sin(time * 1.7 + row * .9 + phase) * height * .0018 * world.wind;
     polygon(ctx, [
       [tip, y - height * .065],
-      [tip - spread * (1 + uneven), y + height * .069],
+      [tip - spread * (1 + uneven), y + height * .069 + flutter],
       [tip - spread * .38, y + height * .049],
-      [tip - spread * .67, y + height * .088],
+      [tip - spread * .67, y + height * .088 + flutter],
       [tip, y + height * .045],
-      [tip + spread * .91, y + height * .084],
+      [tip + spread * .91, y + height * .084 - flutter],
       [tip + spread * .50, y + height * .048],
-      [tip + spread * (1.05 - uneven), y + height * .061],
+      [tip + spread * (1.05 - uneven), y + height * .061 - flutter],
     ], tone);
-    if (row > 5) {
-      line(ctx, [[tip + spread * .50, y + height * .048], [tip + spread * .91, y + height * .084]], 'rgba(104, 93, 59, .11)', .7);
+    if (!distant && (row > 6 || world.daylight > .05)) {
+      ctx.strokeStyle = branchLight;
+      ctx.lineWidth = .65;
+      ctx.globalAlpha *= .35 + world.daylight * .27;
+      ctx.beginPath();
+      ctx.moveTo(tip + spread * .50, y + height * .048);
+      ctx.lineTo(tip + spread * .91, y + height * .084 - flutter);
+      ctx.stroke();
+      ctx.globalAlpha /= .35 + world.daylight * .27;
     }
   }
 }
 
-function tent(ctx, time, flicker) {
-  const breeze = Math.sin(time * .78) * 1.15 + Math.sin(time * 1.39) * .35;
-  const roof = [205 + breeze * .16, -109 + breeze * .35];
-  const rear = [144 + breeze * .22, -119 + breeze * .28];
-
-  // A ridge, a broad canvas side, and an open front establish the tent's volume.
-  glow(ctx, 219, -5, 102, [[0, 'rgba(0, 0, 0, .46)'], [1, 'rgba(0, 0, 0, 0)']], .20);
-  polygon(ctx, [[99, -27], rear, roof, [153, -8]], '#343c35');
-  const canvas = ctx.createLinearGradient(114, -100, 243, -3);
-  canvas.addColorStop(0, '#303b36');
-  canvas.addColorStop(.52, '#4d5140');
-  canvas.addColorStop(1, `rgba(119, 98, 59, ${.84 + flicker * .10})`);
-  polygon(ctx, [[99, -27], rear, roof, [153, -8]], canvas);
-  const front = ctx.createLinearGradient(175, -79, 272, -18);
-  front.addColorStop(0, '#77704b');
-  front.addColorStop(1, '#6d4b2e');
-  polygon(ctx, [[153, -8], roof, [280, -16]], front, 'rgba(181, 143, 81, .19)', .8);
-
-  // The dark entrance and folded flap are deliberately visible at phone sizes.
-  polygon(ctx, [[174, -10], [207 + breeze * .18, -91], [254, -17]], '#0c1516');
-  polygon(ctx, [[207 + breeze * .18, -91], [217 + breeze, -37], [254, -17], [232, -16]], '#5e5135');
-  line(ctx, [[207, -91], [217 + breeze, -37], [254, -17]], 'rgba(212, 166, 95, .32)', .8);
-  polygon(ctx, [[174, -10], [182, -28], [231, -22], [244, -16]], '#161e1b');
-  line(ctx, [[182, -21], [229, -19]], 'rgba(149, 106, 59, .17)', .7);
-
-  line(ctx, [rear, roof, [280, -16]], '#b4a07a', 1.1);
-  line(ctx, [[99, -27], rear], 'rgba(144, 150, 122, .44)', .9);
-  line(ctx, [[153, -8], [280, -16]], 'rgba(207, 152, 83, .31)', 1.3);
-  line(ctx, [[125, -74], [151 + breeze * .2, -55], [175, -47]], 'rgba(188, 173, 129, .13)', .7);
-  line(ctx, [[130, -36], [156 + breeze * .2, -25]], 'rgba(12, 21, 20, .28)', 1);
-  line(ctx, [[166, -108], [137 + breeze * .35, -23]], 'rgba(12, 22, 21, .21)', 1);
-  line(ctx, [[183, -104], [151 + breeze * .3, -17]], 'rgba(179, 169, 120, .12)', .8);
-  // Ropes and low pegs stay clear of the walking space around the fire.
-  line(ctx, [rear, [80, -12]], 'rgba(177, 168, 126, .38)', .7);
-  line(ctx, [roof, [307, 5]], 'rgba(178, 158, 111, .39)', .65);
-  line(ctx, [[78, -14], [82, -8]], '#77705a', 1.8);
-  line(ctx, [[305, 1], [309, 8]], '#8c7856', 1.8);
-}
-
-function telescope(ctx) {
-  ctx.lineCap = 'round';
-  // The three wooden legs recede to separate ground points.
-  line(ctx, [[429, -48], [401, 23]], '#62523a', 3.4);
-  line(ctx, [[430, -48], [466, 28]], '#3c3c31', 3.5);
-  line(ctx, [[430, -48], [431, 34]], '#76583a', 3.9);
-  line(ctx, [[415, -13], [452, -5], [431, 4], [415, -13]], 'rgba(122, 113, 78, .57)', 1.1);
-  line(ctx, [[431, -48], [431, -64]], '#80795b', 3);
-  ctx.fillStyle = '#b29b67';
-  ctx.beginPath(); ctx.arc(431, -49, 3.1, 0, TAU); ctx.fill();
+function shore(ctx, width, height, x, y, size, flicker, world) {
+  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .892], [.201, .890], [.235, .899], [.265, .914], [.293, .934], [.33, .941], [.352, .964], [.393, .978], [.43, 1]];
+  const points = outline.map(([px, py]) => [px * width, py * height]);
+  const earth = ctx.createLinearGradient(0, height * .87, 0, height);
+  earth.addColorStop(0, material([11, 21, 25], [83, 92, 73], world, .5));
+  earth.addColorStop(.55, material([7, 15, 20], [59, 71, 59], world, .35));
+  earth.addColorStop(1, material([4, 11, 16], [41, 55, 48], world, .25));
+  polygon(ctx, [...points, [0, height]], earth);
 
   ctx.save();
-  ctx.translate(431, -69);
-  ctx.rotate(-.43);
-  const barrel = ctx.createLinearGradient(0, -7, 0, 7);
-  barrel.addColorStop(0, '#576d66');
-  barrel.addColorStop(.34, '#3f554f');
-  barrel.addColorStop(1, '#17292b');
-  polygon(ctx, [[-28, -6], [28, -8], [28, 8], [-28, 6]], barrel);
-  polygon(ctx, [[-33, -3.4], [-26, -3.4], [-26, 3.4], [-33, 3.4]], '#838270');
-  polygon(ctx, [[-18, -6.5], [-14, -6.6], [-14, 6.6], [-18, 6.5]], '#9e8c5b');
-  polygon(ctx, [[23, -8], [29, -8], [29, 8], [23, 8]], '#b1a274');
-  ctx.fillStyle = '#0b1b20';
-  ctx.beginPath(); ctx.ellipse(29, 0, 2.5, 7, 0, 0, TAU); ctx.fill();
-  ctx.strokeStyle = 'rgba(150, 190, 185, .35)'; ctx.lineWidth = .75;
-  ctx.beginPath(); ctx.ellipse(29, -1, 1.8, 5.6, 0, Math.PI * 1.05, Math.PI * 1.72); ctx.stroke();
-  line(ctx, [[-23, -5], [21, -6.2]], 'rgba(182, 185, 142, .24)', .8);
+  ctx.clip();
+  ctx.save();
+  ctx.globalAlpha *= world.fire;
+  glow(ctx, x, y + size * .2, size * 5.5, [[0, `rgba(214, 130, 58, ${.18 * flicker})`], [.45, 'rgba(161, 98, 45, .045)'], [1, 'rgba(161, 98, 45, 0)']], .38);
   ctx.restore();
+  // Broad, barely lit facets give the ledge depth without introducing objects.
+  polygon(ctx, [[width * .14, height * .90], [width * .23, height * .91], [width * .28, height * .945], [width * .225, height * .934]], material([13, 20, 21], [97, 102, 80], world, .5));
+  polygon(ctx, [[width * .27, height * .938], [width * .327, height * .949], [width * .357, height * .977], [width * .312, height * .963]], material([10, 18, 22], [71, 86, 71], world, .4));
+  ctx.restore();
+
+  ctx.strokeStyle = material([31, 44, 45], [128, 139, 113], world, .5);
+  ctx.lineWidth = .7;
+  ctx.beginPath();
+  points.slice(0, 11).forEach(([px, py], index) => index ? ctx.lineTo(px, py) : ctx.moveTo(px, py));
+  ctx.stroke();
+  const edgeLight = ctx.createLinearGradient(x - size * 3, 0, x + size * 3, 0);
+  edgeLight.addColorStop(0, 'rgba(179, 118, 63, 0)');
+  edgeLight.addColorStop(.5, `rgba(208, 145, 77, ${.29 * flicker * world.fire})`);
+  edgeLight.addColorStop(1, 'rgba(179, 118, 63, 0)');
+  ctx.strokeStyle = edgeLight;
+  ctx.beginPath();
+  points.slice(3, 9).forEach(([px, py], index) => index ? ctx.lineTo(px, py) : ctx.moveTo(px, py));
+  ctx.stroke();
 }
 
-function provisions(ctx, time) {
-  // A low wooden supply box carries the camp's second, quieter light.
-  polygon(ctx, [[365, 1], [404, -3], [415, 4], [375, 10]], '#57503a');
-  polygon(ctx, [[375, 10], [415, 4], [414, 33], [375, 39]], '#3f3526');
-  polygon(ctx, [[365, 1], [375, 10], [375, 39], [365, 28]], '#2b2c23');
-  line(ctx, [[381, 10], [380, 37]], '#8c7650', 2);
-  line(ctx, [[406, 6], [405, 33]], '#766241', 2);
-  line(ctx, [[375, 21], [414, 15]], 'rgba(13, 19, 17, .6)', .8);
-  line(ctx, [[376, 30], [414, 24]], 'rgba(13, 19, 17, .6)', .8);
-  polygon(ctx, [[391, 9], [398, 8], [398, 13], [391, 14]], '#a39469');
+function fire(ctx, x, y, size, time, flicker, world) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size, size);
 
-  const lampX = 389;
-  const lampY = -13;
-  glow(ctx, lampX, lampY, 43, [[0, 'rgba(248, 180, 83, .18)'], [.35, 'rgba(214, 136, 56, .045)'], [1, 'rgba(214, 136, 56, 0)']]);
-  ctx.strokeStyle = '#8d8c6a'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(lampX, lampY - 11, 5, Math.PI, 0); ctx.stroke();
-  polygon(ctx, [[lampX - 6, lampY - 7], [lampX + 6, lampY - 7], [lampX + 5, lampY + 10], [lampX - 5, lampY + 10]], '#867650');
-  const glass = ctx.createLinearGradient(lampX - 4, 0, lampX + 4, 0);
-  glass.addColorStop(0, '#bb8a3d'); glass.addColorStop(.52, '#ffdb8d'); glass.addColorStop(1, '#c28b40');
-  polygon(ctx, [[lampX - 4, lampY - 5], [lampX + 4, lampY - 5], [lampX + 3.7, lampY + 7], [lampX - 3.7, lampY + 7]], glass);
-  line(ctx, [[lampX - 6, lampY - 6], [lampX + 6, lampY - 6]], '#c2b080', 1.8);
-  line(ctx, [[lampX - 5, lampY + 9], [lampX + 5, lampY + 9]], '#9c8b60', 2.2);
-  line(ctx, [[lampX, lampY - 6], [lampX, lampY + 8]], 'rgba(76, 58, 35, .45)', .65);
-
-  // Rolled bedding and a cup make the equipment feel recently used.
-  ctx.save(); ctx.translate(294, 20); ctx.rotate(.12);
-  polygon(ctx, [[-18, -9], [17, -9], [20, -6], [20, 5], [16, 8], [-18, 8]], '#3c5147');
-  ctx.fillStyle = '#4b6050'; ctx.beginPath(); ctx.ellipse(-18, -.5, 5, 8.5, 0, 0, TAU); ctx.fill();
-  ctx.strokeStyle = '#8c8764'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(-7, -9); ctx.lineTo(-7, 8); ctx.moveTo(10, -9); ctx.lineTo(10, 8); ctx.stroke();
-  ctx.strokeStyle = 'rgba(159, 172, 135, .28)'; ctx.lineWidth = .8;
-  ctx.beginPath(); ctx.ellipse(-18, -.5, 2.5, 5.5, 0, .3, TAU); ctx.stroke();
-  ctx.restore();
-  polygon(ctx, [[352, 15], [360, 15], [359, 23], [353, 23]], '#8c8970');
-  ctx.strokeStyle = '#8c8970'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(360, 18, 2.2, -Math.PI * .6, Math.PI * .6); ctx.stroke();
-  line(ctx, [[353, 15], [359, 15]], '#d3b989', .7);
-  ctx.strokeStyle = 'rgba(168, 162, 129, .07)'; ctx.lineWidth = .75;
-  ctx.beginPath(); ctx.moveTo(356, 11); ctx.bezierCurveTo(353, 7, 359 + Math.sin(time) * 2, 4, 357, 0); ctx.stroke();
-}
-
-function campfire(ctx, time, flicker) {
-  const x = 328;
-  const y = 3;
-  const smokeDrift = Math.sin(time * .34) * 9;
-  // Low smoke has soft edges without a costly canvas blur.
-  for (let index = 0; index < 6; index += 1) {
-    const phase = (time * .055 + index / 6) % 1;
-    const sx = x + phase * 28 + Math.sin(phase * 6 + time * .27) * 8 + smokeDrift * phase;
-    const sy = y - 30 - phase * 98;
-    const alpha = Math.sin(phase * Math.PI) * .045;
-    glow(ctx, sx, sy, 8 + phase * 22, [[0, `rgba(157, 159, 139, ${alpha})`], [1, 'rgba(157, 159, 139, 0)']], .55 + phase * .8);
+  const wind = (Math.sin(time * .63) * .12 + Math.sin(time * 1.07 + .7) * .045) * world.wind;
+  // Smoke and sparks are fixed populations animated exclusively by scene time.
+  for (let index = 0; index < 5; index += 1) {
+    const phase = (time * .062 + index / 5) % 1;
+    const sx = phase * (.4 * world.wind + wind * 4) + Math.sin(phase * 5.5 + time * .31) * phase * .28 * world.wind;
+    const sy = -1.08 - phase * 3.2;
+    const alpha = Math.sin(phase * Math.PI) * .035 * world.fire;
+    glow(ctx, sx, sy, .28 + phase * .63, [[0, `rgba(163, 164, 145, ${alpha})`], [1, 'rgba(163, 164, 145, 0)']], .65 + phase * .6);
   }
 
-  const stonePositions = [[-22, -2, 8, 4], [-11, -7, 8, 4], [4, -8, 7, 4], [18, -4, 8, 5], [24, 5, 7, 4]];
   function stone(dx, dy, rx, ry, front) {
-    const gradient = ctx.createLinearGradient(x + dx, y + dy - ry, x + dx, y + dy + ry);
-    gradient.addColorStop(0, front ? '#76634a' : '#645a44');
-    gradient.addColorStop(1, '#242b24');
-    polygon(ctx, [[x + dx - rx, y + dy], [x + dx - rx * .6, y + dy - ry], [x + dx + rx * .4, y + dy - ry * .9], [x + dx + rx, y + dy + ry * .1], [x + dx + rx * .55, y + dy + ry], [x + dx - rx * .55, y + dy + ry * .8]], gradient);
+    const gradient = ctx.createLinearGradient(dx, dy - ry, dx, dy + ry);
+    gradient.addColorStop(0, front ? material([35, 45, 40], [137, 139, 119], world, .4, [113, 96, 70]) : material([28, 41, 37], [115, 125, 104], world, .4, [77, 78, 62]));
+    gradient.addColorStop(1, material([16, 29, 27], [65, 80, 66], world, .3, [25, 39, 32]));
+    polygon(ctx, [[dx - rx, dy], [dx - rx * .55, dy - ry], [dx + rx * .38, dy - ry * .9], [dx + rx, dy + ry * .1], [dx + rx * .5, dy + ry], [dx - rx * .55, dy + ry * .8]], gradient);
   }
-  stonePositions.forEach(([dx, dy, rx, ry]) => stone(dx, dy, rx, ry, false));
-  glow(ctx, x, y, 25, [[0, 'rgba(255, 150, 51, .30)'], [.55, 'rgba(223, 91, 29, .13)'], [1, 'rgba(223, 91, 29, 0)']], .32);
+  [[-.76, -.05, .29, .14], [-.35, -.24, .29, .14], [.18, -.26, .27, .13], [.70, -.12, .29, .17], [.92, .17, .25, .15]].forEach(([dx, dy, rx, ry]) => stone(dx, dy, rx, ry, false));
+  glow(ctx, 0, .08, .9, [[0, `rgba(255, 142, 43, ${.28 * world.fire})`], [.6, `rgba(220, 82, 24, ${.08 * world.fire})`], [1, 'rgba(220, 82, 24, 0)']], .32);
 
   ctx.lineCap = 'round';
-  line(ctx, [[x - 15, y - 1], [x + 13, y + 8]], '#68472c', 6);
-  line(ctx, [[x - 14, y + 7], [x + 14, y - 3]], '#96613a', 5);
-  line(ctx, [[x - 9, y], [x + 11, y + 5]], 'rgba(224, 132, 55, .68)', 1.2);
-  line(ctx, [[x - 10, y + 5], [x + 11, y - 2]], 'rgba(243, 169, 69, .55)', .9);
-  for (let index = 0; index < 7; index += 1) {
-    const emberX = x + Math.sin(index * 12.3) * 11;
-    const emberY = y + Math.cos(index * 7.4) * 3;
-    ctx.fillStyle = `rgba(255, ${130 + index * 9}, 58, ${.5 + Math.sin(time * 3 + index) * .18})`;
-    ctx.beginPath(); ctx.arc(emberX, emberY, .8 + index % 2 * .4, 0, TAU); ctx.fill();
+  ctx.strokeStyle = material([25, 31, 27], [93, 77, 54], world, .3, [100, 66, 41]); ctx.lineWidth = .20;
+  ctx.beginPath(); ctx.moveTo(-.58, .02); ctx.lineTo(.47, .32); ctx.stroke();
+  ctx.strokeStyle = material([36, 37, 28], [124, 100, 64], world, .3, [144, 91, 51]); ctx.lineWidth = .17;
+  ctx.beginPath(); ctx.moveTo(-.54, .27); ctx.lineTo(.53, -.08); ctx.stroke();
+  ctx.strokeStyle = `rgba(232, 133, 52, ${.65 * world.fire})`; ctx.lineWidth = .035;
+  ctx.beginPath(); ctx.moveTo(-.41, .02); ctx.lineTo(.39, .25); ctx.moveTo(-.39, .21); ctx.lineTo(.43, -.03); ctx.stroke();
+  for (let index = 0; index < 6; index += 1) {
+    ctx.fillStyle = `rgba(255, ${138 + index * 10}, 59, ${(.5 + Math.sin(time * 3 + index) * .15) * world.fire})`;
+    ctx.beginPath(); ctx.arc(Math.sin(index * 12.3) * .35, .06 + Math.cos(index * 7.4) * .10, .035 + index % 2 * .013, 0, TAU); ctx.fill();
   }
 
-  ctx.save(); ctx.translate(x, y); ctx.scale(24, 24);
-  const sway = Math.sin(time * 4.2) * .085 + Math.sin(time * 6.7) * .03;
-  const flame = ctx.createLinearGradient(0, -1.55, 0, .2);
-  flame.addColorStop(0, '#eaa655'); flame.addColorStop(.5, '#f08a38'); flame.addColorStop(1, '#bc4e26');
+  const lean = wind + Math.sin(time * 4.6) * .07;
+  const curl = Math.sin(time * 6.1 + .8) * .08;
+  const tall = 1.46 * flicker + Math.sin(time * 3.4) * .09;
+  const flame = ctx.createLinearGradient(0, -1.6, 0, .2);
+  flame.addColorStop(0, '#e5a75b'); flame.addColorStop(.5, '#ed8b3c'); flame.addColorStop(1, '#b94c25');
+  ctx.save();
+  ctx.globalAlpha *= world.fire;
+  ctx.scale(1, .25 + .75 * Math.sqrt(world.fire));
   ctx.fillStyle = flame;
   ctx.beginPath();
   ctx.moveTo(-.37, .10);
-  ctx.bezierCurveTo(-.76, -.31, -.08, -.77, -.15 + sway, -1.46 * flicker);
-  ctx.bezierCurveTo(.18, -1.16, .03, -.83, .22, -.66);
-  ctx.bezierCurveTo(.42, -.89, .43, -.97, .43 + sway, -1.06);
-  ctx.bezierCurveTo(.76, -.36, .56, .03, .23, .14);
+  ctx.bezierCurveTo(-.76 + curl, -.29, -.09 - lean, -.83, -.16 + lean * 1.7, -tall);
+  ctx.bezierCurveTo(.20 + lean, -1.05, .01 + curl, -.78, .23 + curl, -.61);
+  ctx.bezierCurveTo(.43, -.79, .41 + lean, -1.03, .42 + lean * 1.4, -1.01 - curl);
+  ctx.bezierCurveTo(.72 - curl, -.36, .58, .03, .24, .14);
   ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffcf77';
-  ctx.beginPath(); ctx.moveTo(-.17, .1);
-  ctx.bezierCurveTo(-.39, -.17, .05, -.47, -.01 + sway * .6, -.91 * flicker);
-  ctx.bezierCurveTo(.26, -.59, .10, -.41, .27, -.16);
-  ctx.quadraticCurveTo(.37, .09, -.17, .1); ctx.fill();
-  ctx.fillStyle = '#ffe7ad';
-  ctx.beginPath(); ctx.moveTo(-.07, .10); ctx.quadraticCurveTo(-.18, -.1, .04, -.36); ctx.quadraticCurveTo(.04, -.12, .16, .09); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#ffd183';
+  ctx.beginPath(); ctx.moveTo(-.17, .10);
+  ctx.bezierCurveTo(-.40 - curl * .5, -.16, .04 + lean * .5, -.45, -.015 + lean, -.92 * flicker);
+  ctx.bezierCurveTo(.28 + curl, -.59, .07, -.37, .27, -.15);
+  ctx.quadraticCurveTo(.35, .09, -.17, .10); ctx.fill();
+  ctx.fillStyle = '#ffe9b2';
+  ctx.beginPath(); ctx.moveTo(-.065, .10); ctx.quadraticCurveTo(-.19, -.1, .04 + lean * .4, -.40 * flicker); ctx.quadraticCurveTo(.04, -.12, .16, .09); ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  [[-17, 10, 8, 4], [-2, 13, 9, 5], [14, 11, 8, 5]].forEach(([dx, dy, rx, ry]) => stone(dx, dy, rx, ry, true));
-  for (let index = 0; index < 14; index += 1) {
-    const phase = (time * (.105 + index * .002) + index * .271) % 1;
-    const ex = x + Math.sin(phase * 6 + index * 2.9) * (5 + phase * 9) + phase * 19;
-    const ey = y - 17 - phase * (61 + index % 4 * 10);
-    const alpha = Math.sin(phase * Math.PI) * .66;
-    ctx.fillStyle = `rgba(250, ${153 + index % 4 * 17}, 77, ${alpha})`;
-    ctx.beginPath(); ctx.ellipse(ex, ey, .55 + index % 3 * .15, .95 + index % 2 * .3, -.35, 0, TAU); ctx.fill();
+  [[-.65, .37, .29, .15], [-.08, .47, .34, .18], [.52, .39, .29, .17]].forEach(([dx, dy, rx, ry]) => stone(dx, dy, rx, ry, true));
+  for (let index = 0; index < 12; index += 1) {
+    const phase = (time * (.105 + index * .003) + index * .273) % 1;
+    const ex = Math.sin(phase * 6 + index * 2.9) * (.16 + phase * .43) + phase * (.7 + wind * 3);
+    const ey = -.55 - phase * (2.5 + index % 4 * .3);
+    const alpha = Math.sin(phase * Math.PI) * .60 * world.fire;
+    ctx.fillStyle = `rgba(246, ${151 + index % 4 * 17}, 78, ${alpha})`;
+    ctx.beginPath(); ctx.ellipse(ex, ey, .022 + index % 3 * .005, .033 + index % 2 * .010, -.3, 0, TAU); ctx.fill();
   }
+  ctx.restore();
 }
 
-/** Draw in CSS-pixel coordinates; time is seconds supplied by the scene clock. */
-export function drawCamp(context, { width, height, time = 0 }) {
+/** CSS pixels and scene time in seconds; optional world values default to night. */
+export function drawCamp(context, { width, height, time = 0, world = {} }) {
   if (!context || width <= 0 || height <= 0) return;
-  // At narrow widths the complete campsite fits before the lower-right emblem.
-  // Height limits the footprint on short landscape screens.
-  const reservedRight = width < 600 ? 112 : 138;
-  const scale = Math.min((width - reservedRight) / 540, height * .001, 1.25);
-  if (scale <= 0) return;
-  const flicker = .91 + Math.sin(time * 5.4) * .045 + Math.sin(time * 8.7) * .035;
   const ctx = context;
+  const x = width * .215;
+  const y = height * .896;
+  const size = Math.max(14, Math.min(29, width * .045, height * .033));
+  const flicker = .94 + Math.sin(time * 5.4) * .055 + Math.sin(time * 8.7) * .035;
+  const weather = conditions(world);
   ctx.save();
-  ctx.translate(0, height * .95);
-  ctx.scale(scale, scale);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.save();
+  ctx.globalAlpha *= weather.fire;
+  glow(ctx, x, y - size * .4, size * 6.8, [[0, `rgba(231, 133, 54, ${.13 * flicker})`], [.35, 'rgba(186, 101, 37, .028)'], [1, 'rgba(186, 101, 37, 0)']]);
+  ctx.restore();
 
-  const shore = [[-20, -29], [23, -37], [62, -34], [93, -39], [127, -32], [167, -29], [216, -24], [264, -15], [313, -12], [357, -2], [391, 7], [423, 15], [460, 34], [490, 40], [522, 62], [557, 91]];
-  const ground = ctx.createLinearGradient(0, -35, 0, 110);
-  ground.addColorStop(0, '#101a1b'); ground.addColorStop(.45, '#0a1216'); ground.addColorStop(1, '#050b10');
-  polygon(ctx, [...shore, [557, height / scale], [-20, height / scale]], ground);
-  line(ctx, shore.slice(0, 13), 'rgba(104, 125, 116, .27)', .9);
-  // Broken rock planes make a ledge rather than a flat black foreground.
-  polygon(ctx, [[25, -34], [73, -30], [127, 3], [79, -5], [0, -14]], '#111b1c');
-  polygon(ctx, [[367, 4], [414, 16], [443, 42], [400, 29]], '#151c1b');
-  polygon(ctx, [[412, 20], [461, 36], [490, 51], [467, 62], [445, 49]], '#0e1619');
-  line(ctx, [[403, 17], [416, 22], [427, 35]], 'rgba(104, 114, 98, .23)', .8);
-  line(ctx, [[446, 40], [464, 47], [479, 49]], 'rgba(126, 130, 105, .15)', .7);
-
-  pine(ctx, 13, -33, 184, .7, time);
-  pine(ctx, 61, -33, 131, 2.6, time);
-  pine(ctx, 103, -30, 86, 4.1, time);
-  glow(ctx, 325, -17, 169, [[0, `rgba(221, 133, 55, ${.15 * flicker})`], [.33, 'rgba(193, 115, 43, .07)'], [1, 'rgba(193, 115, 43, 0)']], .64);
-  glow(ctx, 326, 11, 113, [[0, `rgba(237, 149, 64, ${.17 * flicker})`], [.6, 'rgba(159, 96, 47, .035)'], [1, 'rgba(159, 96, 47, 0)']], .25);
-
-  tent(ctx, time, flicker);
-  telescope(ctx);
-  provisions(ctx, time);
-  // Three cut logs await the next evening; their end grain catches warm light.
-  [[270, 22], [285, 26], [279, 15]].forEach(([x, y], index) => {
-    line(ctx, [[x - 14, y - 6], [x + 7, y]], '#443b29', 8);
-    ctx.fillStyle = '#8e6d43'; ctx.beginPath(); ctx.ellipse(x + 7, y, 4.4, 4, .15, 0, TAU); ctx.fill();
-    ctx.strokeStyle = '#4c422e'; ctx.lineWidth = .7; ctx.beginPath(); ctx.ellipse(x + 7, y, 2, 2.5, .15, .1, TAU - .4); ctx.stroke();
-    line(ctx, [[x - 12, y - 8], [x + 2, y - 3]], 'rgba(173, 129, 70, .25)', .8);
-  });
-  campfire(ctx, time, flicker);
-
-  // Sparse grasses soften the meeting of stone, soil, and the tent pegs.
-  for (let index = 0; index < 17; index += 1) {
-    const x = 44 + index * 25 + Math.sin(index * 4.2) * 6;
-    const y = 6 + (x / 490) ** 2 * 43 + Math.sin(index * 2.3) * 5;
-    const sway = Math.sin(time * .88 + index * .9) * 1.3;
-    const tall = 3 + index % 4 * 1.8;
-    ctx.strokeStyle = index > 8 && index < 14 ? 'rgba(135, 111, 64, .42)' : 'rgba(66, 88, 73, .48)';
-    ctx.lineWidth = .8;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 1, y - tall * .65, x - 2 + sway, y - tall);
-    ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 1, y - tall * .5, x + 3 + sway, y - tall * .7); ctx.stroke();
-  }
+  // Muted, smaller pines recede behind the larger trees at the shore's edge.
+  pine(ctx, width * .043, height * .878, Math.min(height * .175, width * .32), 2.9, time, weather, true);
+  pine(ctx, width * .102, height * .881, Math.min(height * .132, width * .23), 4.4, time, weather, true);
+  pine(ctx, width * .145, height * .892, Math.min(height * .075, width * .13), 5.7, time, weather, true);
+  shore(ctx, width, height, x, y, size, flicker, weather);
+  pine(ctx, width * .012, height * .878, Math.min(height * .285, width * .54), .7, time, weather);
+  pine(ctx, width * .078, height * .883, Math.min(height * .172, width * .30), 2.6, time, weather);
+  pine(ctx, width * .118, height * .887, Math.min(height * .102, width * .18), 4.1, time, weather);
+  fire(ctx, x, y, size, time, flicker, weather);
   ctx.restore();
 }

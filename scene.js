@@ -1,6 +1,7 @@
-import { drawCamp } from './camp.js?v=campfire-2';
+import { drawCamp } from './camp.js?v=ecosystem-1';
+import { fragmentSource } from './sky.js?v=ecosystem-1';
+import { sampleWorld, cloudAt, SEA_LEVEL } from './world.js?v=ecosystem-1';
 
-const SEA_LEVEL = 0.205;
 
 const vertexSource = `
   attribute vec2 aPosition;
@@ -11,111 +12,6 @@ const vertexSource = `
   }
 `;
 
-const fragmentSource = `
-  precision highp float;
-  varying vec2 vUv;
-  uniform vec2 uResolution;
-  uniform vec2 uPointer;
-  uniform vec2 uDrift;
-  uniform float uTime;
-  uniform vec3 uRipple;
-
-  float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
-  }
-
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-  }
-
-  float fbm(vec2 p) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    mat2 turn = mat2(0.8, -0.6, 0.6, 0.8);
-    for (int i = 0; i < 4; i++) {
-      value += noise(p) * amplitude;
-      p = turn * p * 2.05 + 13.4;
-      amplitude *= 0.5;
-    }
-    return value;
-  }
-
-  vec3 sky(vec2 p) {
-    vec2 drift = uPointer * vec2(0.010, 0.006) + uDrift;
-    vec2 q = p + drift;
-    vec3 color = mix(vec3(0.006, 0.012, 0.022), vec3(0.017, 0.039, 0.051), 1.0 - q.y);
-    float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1) * 0.045;
-    vec2 current = vec2(uTime * 0.009, -uTime * 0.005);
-    float cloud = fbm(q * 5.2 + vec2(7.0, 2.0) + current);
-    float dust = fbm(vec2(q.x * 17.0, spine * 24.0) + 19.0 - current * 0.7);
-    float fine = noise(q * 54.0 + cloud * 2.8 + current * 1.4);
-    float band = exp(-pow(abs(spine + (cloud - 0.5) * 0.13) * 7.4, 1.45));
-    float core = exp(-pow(abs(spine) * 14.0, 1.2));
-    float knots = smoothstep(0.28, 0.78, cloud) * (0.45 + dust * 0.8);
-    vec3 stardust = mix(vec3(0.17, 0.25, 0.28), vec3(0.37, 0.29, 0.20), smoothstep(-0.45, 0.60, q.x));
-    color += stardust * band * knots * (0.58 + fine * 1.35);
-    color += vec3(0.28, 0.31, 0.30) * core * pow(dust, 2.0) * 0.72;
-    float rift = 1.0 - smoothstep(0.008, 0.056, abs(spine + (cloud - 0.5) * 0.11));
-    color *= 1.0 - rift * (0.4 + fine * 0.35);
-    color += vec3(0.021, 0.045, 0.047) * cloud * exp(-abs(spine) * 2.8);
-
-    float horizonGlow = exp(-abs(p.y - ${SEA_LEVEL}) * 26.0);
-    color += vec3(0.065, 0.105, 0.11) * horizonGlow;
-    color += vec3(0.12, 0.075, 0.035) * horizonGlow * exp(-pow((q.x + 0.32) * 2.5, 2.0));
-    return color;
-  }
-
-  void main() {
-    vec2 uv = vUv;
-    float aspect = uResolution.x / uResolution.y;
-    vec2 p = vec2((uv.x - 0.5) * aspect, uv.y);
-    float horizon = ${SEA_LEVEL};
-    vec3 color;
-
-    if (uv.y >= horizon) {
-      color = sky(p);
-    } else {
-      float depth = horizon - uv.y;
-      float time = uTime * 0.48;
-      vec2 water = vec2(p.x * 3.2 / (depth + 0.075), 0.65 / (depth + 0.028));
-      float swell = noise(water * vec2(0.55, 0.24) + vec2(time * 0.21, -time * 0.19));
-      float smallWaves = noise(water * vec2(1.7, 0.8) - time * 0.17);
-      float wave = sin(water.y * 2.1 + swell * 5.8 + sin(water.x * 0.7 + time) * 0.55 - time);
-      float crest = pow(max(wave, 0.0), 16.0);
-      float fineCrest = pow(max(sin(water.y * 5.3 + smallWaves * 5.0 - time * 1.7), 0.0), 23.0);
-      float reflectionX = -0.40 + uPointer.x * 0.035 + (swell - 0.5) * depth * 0.5;
-      float reflection = exp(-pow((p.x - reflectionX) / (0.045 + depth * 0.72), 2.0));
-      float wideReflection = exp(-pow((p.x + 0.2) / (0.20 + depth * 1.3), 2.0));
-      float distanceFade = exp(-depth * 5.0);
-      color = vec3(0.008, 0.021, 0.031) + vec3(0.012, 0.021, 0.024) * wideReflection;
-      color += vec3(0.065, 0.14, 0.18) * (crest * 0.6 + fineCrest * 0.17) * wideReflection;
-      color += vec3(0.32, 0.24, 0.15) * reflection * (crest * 0.7 + fineCrest * 0.22) * distanceFade;
-      color += vec3(0.19, 0.25, 0.25) * reflection * exp(-depth * 35.0) * (0.25 + smallWaves * 0.25);
-      color += vec3(0.09, 0.15, 0.18) * exp(-depth * 75.0);
-
-      float age = uTime - uRipple.z;
-      if (age >= 0.0 && age < 5.0) {
-        vec2 rippleCenter = vec2((uRipple.x - 0.5) * aspect, uRipple.y);
-        float radius = length((p - rippleCenter) * vec2(1.0, 1.7));
-        float ring = sin((radius - age * 0.13) * 100.0);
-        float envelope = exp(-pow((radius - age * 0.13) * 19.0, 2.0)) * exp(-age * 1.1);
-        color += vec3(0.17, 0.24, 0.25) * max(ring, 0.0) * envelope * 0.4;
-      }
-      color *= 0.5 + 0.5 * smoothstep(0.0, 0.14, uv.y);
-    }
-
-    float edge = pow(abs(uv.x - 0.5) * 1.35, 2.0);
-    color *= 1.0 - edge * 0.5;
-    color += (hash(gl_FragCoord.xy + fract(uTime * 0.3)) - 0.5) / 255.0;
-    gl_FragColor = vec4(color, 1.0);
-  }
-`;
 
 function makeRenderer(canvas) {
   const gl = canvas.getContext('webgl', {
@@ -158,22 +54,30 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uGalaxy', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
 
   return {
     resize(width, height) {
-      const maxPixels = navigator.hardwareConcurrency <= 4 ? 900000 : 1400000;
+      const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
       const ratio = Math.min(window.devicePixelRatio || 1, 1.4, Math.sqrt(maxPixels / (width * height)));
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.uResolution, width, height);
     },
-    draw(time, pointer, ripple, drift) {
+    draw(time, pointer, ripple, drift, world, motion) {
       gl.uniform1f(uniforms.uTime, time);
       gl.uniform2f(uniforms.uPointer, pointer.x, pointer.y);
       gl.uniform2f(uniforms.uDrift, drift.x, drift.y);
       gl.uniform3f(uniforms.uRipple, ripple.x, ripple.y, ripple.time);
+      gl.uniform3f(uniforms.uSun, ...world.sun);
+      gl.uniform4f(uniforms.uMoon, ...world.moon);
+      gl.uniform4f(uniforms.uWorld, world.daylight, world.night, world.twilight, world.fire);
+      gl.uniform4f(uniforms.uWeather, world.coverage, world.fog, world.wind, world.humidity);
+      gl.uniform2f(uniforms.uCloudOffset, ...world.cloudOffset);
+      gl.uniform2f(uniforms.uGalaxy, world.galaxyAngle * motion, world.galaxySpin);
+      gl.uniform4f(uniforms.uWaves, ...world.waves);
+      gl.uniform1f(uniforms.uMotion, motion);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
     destroy() {
@@ -207,7 +111,8 @@ export function createUniverse(surface, starCanvas) {
   let time = 0;
   let lastFrame = 0;
   let request = 0;
-  let paused = false;
+  let motionAmount = 1;
+  let world = sampleWorld();
   let active = true;
   let resizing = 0;
   const pointer = { x: 0, y: 0 };
@@ -260,18 +165,23 @@ export function createUniverse(surface, starCanvas) {
     const near = [];
     const pointerX = (pointer.x * .5 + .5) * width;
     const pointerY = (.5 - pointer.y * .5) * height;
-    const seeking = !paused && Math.abs(target.x) + Math.abs(target.y) > .005;
-    for (const star of stars) {
+    const seeking = motionAmount > .5 && Math.abs(target.x) + Math.abs(target.y) > .005;
+    const rotation = world.galaxyAngle * motionAmount;
+    const cos = Math.cos(rotation), sin = Math.sin(rotation);
+    if (world.night > .001) for (const star of stars) {
       const depth = .65 + star.depth * .35;
-      const movingX = star.x + pointer.x * star.depth * 13 - drift.x * height * depth;
+      const sx = star.x - width * .5;
+      const sy = height * .48 - star.y;
+      const movingX = width * .5 + cos * sx - sin * sy + pointer.x * star.depth * 13 - drift.x * height * depth;
       const x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
-      const y = star.y - pointer.y * star.depth * 9 + drift.y * height * depth;
+      const y = height * .48 - sin * sx - cos * sy - pointer.y * star.depth * 9 + drift.y * height * depth;
       if (y < 5 || y > height * 0.790) continue;
-      const twinkle = 0.83 + Math.sin(time * 0.45 + star.phase) * 0.17;
+      const twinkle = .80 + Math.sin(world.seconds * .72 + star.phase) * .20 * motionAmount;
       const distance = Math.hypot(x - pointerX, y - pointerY);
       const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
       const edgeFade = Math.min(1, y / 12, (height * .790 - y) / 12);
-      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade;
+      const cloud = cloudAt(x / width, 1 - y / height, width / height, world);
+      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * world.night * (1 - cloud) ** 2 * (1 - world.fog * .5);
       if (proximity > 0 && star.alpha > .36) near.push({ x, y, distance });
       const color = star.warm ? '222, 199, 155' : '193, 215, 228';
       context.fillStyle = `rgba(${color}, ${alpha})`;
@@ -337,15 +247,16 @@ export function createUniverse(surface, starCanvas) {
       context.restore();
     }
 
-    const meteorPhase = (time + 17) % 19;
-    if (meteorPhase < 1.8 && !paused) {
+    const meteorPhase = ((world.seconds + 17) % 19 + 19) % 19;
+    if (meteorPhase < 1.8 && world.night > .1 && motionAmount > .5) {
       const progress = meteorPhase / 1.8;
       const x = width * (0.82 - progress * 0.23);
       const y = height * (0.13 + progress * 0.16);
       const tailX = width * 0.09;
       const tailY = -height * 0.062;
       const trail = context.createLinearGradient(x, y, x + tailX, y + tailY);
-      trail.addColorStop(0, `rgba(224, 219, 198, ${Math.sin(progress * Math.PI) * 0.45})`);
+      const visibility = world.night * (1 - cloudAt(x / width, 1 - y / height, width / height, world));
+      trail.addColorStop(0, `rgba(224, 219, 198, ${Math.sin(progress * Math.PI) * .60 * visibility})`);
       trail.addColorStop(1, 'rgba(224, 219, 198, 0)');
       context.strokeStyle = trail;
       context.lineWidth = 1;
@@ -354,20 +265,23 @@ export function createUniverse(surface, starCanvas) {
       context.lineTo(x + tailX, y + tailY);
       context.stroke();
     }
-    drawCamp(context, { width, height, time });
+    drawCamp(context, { width, height, time: world.seconds * Math.max(.25, motionAmount), world });
   }
 
   function draw() {
-    // One bounded camera drift keeps the galaxy and its stars travelling together.
-    drift.x = Math.sin(time * .035) * .032 + Math.sin(time * .011) * .012;
-    drift.y = Math.sin(time * .027) * .020;
-    renderer?.draw(time, pointer, ripple, drift);
+    world = sampleWorld();
+    // The shared clock keeps running even when the tab or browser is closed.
+    drift.x = (Math.sin(world.seconds * .055) * .055 + Math.sin(world.seconds * .017) * .025) * motionAmount;
+    drift.y = Math.sin(world.seconds * .046) * .033 * motionAmount;
+    renderer?.draw(time, pointer, ripple, drift, world, motionAmount);
+    root.dataset.weather = world.weather;
+    root.style.setProperty('--daylight', world.daylight.toFixed(3));
     drawStars();
   }
 
   function animate(timestamp) {
     request = 0;
-    if (paused || !active || document.hidden) return;
+    if (!active || document.hidden) return;
     if (!lastFrame) lastFrame = timestamp;
     const elapsed = timestamp - lastFrame;
     if (elapsed >= 31) {
@@ -383,7 +297,7 @@ export function createUniverse(surface, starCanvas) {
   }
 
   function resume() {
-    if (!paused && active && !document.hidden && !request) {
+    if (active && !document.hidden && !request) {
       lastFrame = 0;
       request = requestAnimationFrame(animate);
     }
@@ -438,19 +352,12 @@ export function createUniverse(surface, starCanvas) {
   return {
     setPointer(x, y) { target.x = x; target.y = y; },
     interact(x, y) {
-      if (paused) return;
       const effect = y < SEA_LEVEL ? ripple : starlight;
       effect.x = x;
       effect.y = y;
       effect.time = time;
     },
-    setPaused(value) {
-      paused = value;
-      cancelAnimationFrame(request);
-      request = 0;
-      if (paused) draw();
-      else resume();
-    },
+    setMotionAmount(value) { motionAmount = Math.max(.1, Math.min(1, value)); },
     setActive(value) {
       active = value;
       if (!active) {

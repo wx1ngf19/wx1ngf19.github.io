@@ -1,0 +1,17 @@
+First Light Particles
+Music by Yoiyami
+
+License: CC0 1.0 Universal (public domain dedication).
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Official release and license declaration:
+https://opengameart.org/node/182244
+
+Original WAV, linked directly from the official release:
+https://opengameart.org/sites/default/files/first_light_particles_0.wav
+
+Site file: night-sky.mp3
+Changes: Converted the full original WAV to 160 kbps MP3, 44.1 kHz stereo.
+The composition and duration are unchanged. Title, artist, and license metadata
+are included in the MP3. No attribution is required by CC0; this credit is kept
+to identify the music and its source.

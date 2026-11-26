@@ -1,14 +1,15 @@
-import { createUniverse } from './scene.js?v=campfire-2';
+import { createUniverse } from './scene.js?v=ecosystem-1';
+import { createSoundtrack } from './music.js?v=ecosystem-1';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');
-const motionButton = document.querySelector('#motion-toggle');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const universe = createUniverse(document.querySelector('#universe-canvas'), document.querySelector('#stars-canvas'));
+const soundtrack = createSoundtrack(document.querySelector('#ambient-audio'), document.querySelector('#music-toggle'));
 const pointerCanvas = document.querySelector('#pointer-canvas');
 const context = pointerCanvas.getContext('2d');
 const aura = document.querySelector('.pointer-aura');
-let paused = reducedMotion.matches;
+let quietEffects = reducedMotion.matches;
 let hasMouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
 let pointerFrame = 0;
 let previousFrame = 0;
@@ -46,7 +47,7 @@ function spawnMote(x, y) {
 
 function drawPointer(timestamp) {
   pointerFrame = 0;
-  if (!context || paused || document.hidden || !hasMouse) return;
+  if (!context || quietEffects || document.hidden || !hasMouse) return;
   const delta = previousFrame ? Math.min((timestamp - previousFrame) / 1000, 0.05) : 0.016;
   previousFrame = timestamp;
   context.clearRect(0, 0, viewportWidth, viewportHeight);
@@ -92,7 +93,7 @@ function drawPointer(timestamp) {
 }
 
 function wakePointer() {
-  if (!pointerFrame && !paused && hasMouse && !document.hidden) {
+  if (!pointerFrame && !quietEffects && hasMouse && !document.hidden) {
     previousFrame = 0;
     pointerFrame = requestAnimationFrame(drawPointer);
   }
@@ -111,7 +112,7 @@ window.addEventListener('pointermove', (event) => {
     hasMouse = true;
     root.classList.add('has-mouse');
   }
-  if (paused || !hasMouse) return;
+  if (quietEffects || !hasMouse) return;
   pointer.active = true;
   pointer.x = event.clientX;
   pointer.y = event.clientY;
@@ -128,17 +129,15 @@ window.addEventListener('pointermove', (event) => {
 document.addEventListener('pointerleave', resetPointer);
 window.addEventListener('blur', resetPointer);
 stage.addEventListener('pointerdown', (event) => {
-  if (paused || event.target.closest('button')) return;
+  if (event.target.closest('button')) return;
   universe.interact(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
 }, { passive: true });
 
-function setPaused(value) {
-  paused = value;
-  root.dataset.motion = paused ? 'paused' : 'running';
-  motionButton.setAttribute('aria-pressed', String(paused));
-  motionButton.setAttribute('aria-label', paused ? 'wx1ngf19 的星海徽记，开启动态效果' : 'wx1ngf19 的星海徽记，暂停动态效果');
-  universe.setPaused(paused);
-  if (paused) {
+function setQuietEffects(value) {
+  quietEffects = value;
+  root.dataset.motion = 'running';
+  universe.setMotionAmount(value ? .18 : 1);
+  if (quietEffects) {
     cancelAnimationFrame(pointerFrame);
     pointerFrame = 0;
     context?.clearRect(0, 0, viewportWidth, viewportHeight);
@@ -147,12 +146,11 @@ function setPaused(value) {
   }
 }
 
-motionButton.addEventListener('click', () => setPaused(!paused));
-reducedMotion.addEventListener('change', (event) => setPaused(event.matches));
+reducedMotion.addEventListener('change', (event) => setQuietEffects(event.matches));
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Space' && !event.repeat && !event.target.closest('button')) {
     event.preventDefault();
-    setPaused(!paused);
+    soundtrack.toggle();
   }
 });
 window.addEventListener('resize', sizePointerCanvas, { passive: true });
@@ -166,4 +164,4 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 sizePointerCanvas();
-setPaused(paused);
+setQuietEffects(quietEffects);
