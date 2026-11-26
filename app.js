@@ -1,20 +1,15 @@
-import { createUniverse } from './scene.js';
+import { createUniverse } from './scene.js?v=campfire-1';
 
 const root = document.documentElement;
-const body = document.body;
-const hero = document.querySelector('.hero');
+const stage = document.querySelector('.universe-stage');
 const motionButton = document.querySelector('#motion-toggle');
-const immersiveButton = document.querySelector('#immersive-toggle');
-const status = document.querySelector('#experience-status');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
 const universe = createUniverse(document.querySelector('#universe-canvas'), document.querySelector('#stars-canvas'));
 const pointerCanvas = document.querySelector('#pointer-canvas');
 const context = pointerCanvas.getContext('2d');
 const aura = document.querySelector('.pointer-aura');
 let paused = reducedMotion.matches;
-let hasMouse = finePointer.matches;
-let immersive = false;
+let hasMouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
 let pointerFrame = 0;
 let previousFrame = 0;
 let lastSpawnX = -1000;
@@ -97,7 +92,7 @@ function drawPointer(timestamp) {
 }
 
 function wakePointer() {
-  if (!pointerFrame && !paused && hasMouse) {
+  if (!pointerFrame && !paused && hasMouse && !document.hidden) {
     previousFrame = 0;
     pointerFrame = requestAnimationFrame(drawPointer);
   }
@@ -122,8 +117,7 @@ window.addEventListener('pointermove', (event) => {
   pointer.y = event.clientY;
   root.classList.add('has-pointer');
   universe.setPointer((event.clientX / viewportWidth - 0.5) * 2, (0.5 - event.clientY / viewportHeight) * 2);
-  const distance = Math.hypot(event.clientX - lastSpawnX, event.clientY - lastSpawnY);
-  if (distance > 4) {
+  if (Math.hypot(event.clientX - lastSpawnX, event.clientY - lastSpawnY) > 4) {
     spawnMote(event.clientX, event.clientY);
     lastSpawnX = event.clientX;
     lastSpawnY = event.clientY;
@@ -133,8 +127,8 @@ window.addEventListener('pointermove', (event) => {
 
 document.addEventListener('pointerleave', resetPointer);
 window.addEventListener('blur', resetPointer);
-hero.addEventListener('pointerdown', (event) => {
-  if (paused || event.target.closest('a, button, summary')) return;
+stage.addEventListener('pointerdown', (event) => {
+  if (paused || event.target.closest('button')) return;
   universe.ripple(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
   if (!hasMouse || event.pointerType === 'touch') return;
   for (let i = 0; i < 22; i += 1) spawnMote(event.clientX, event.clientY, true);
@@ -145,8 +139,7 @@ function setPaused(value) {
   paused = value;
   root.dataset.motion = paused ? 'paused' : 'running';
   motionButton.setAttribute('aria-pressed', String(paused));
-  motionButton.setAttribute('aria-label', paused ? '开启动态效果' : '暂停动态效果');
-  motionButton.querySelector('.control-text').textContent = paused ? '开启动态' : '暂停动态';
+  motionButton.setAttribute('aria-label', paused ? 'wx1ngf19 的星海徽记，开启动态效果' : 'wx1ngf19 的星海徽记，暂停动态效果');
   universe.setPaused(paused);
   if (paused) {
     cancelAnimationFrame(pointerFrame);
@@ -157,76 +150,23 @@ function setPaused(value) {
   }
 }
 
-motionButton.addEventListener('click', () => {
-  setPaused(!paused);
-  status.textContent = paused ? '动态效果已暂停。' : '动态效果已开启。';
-});
+motionButton.addEventListener('click', () => setPaused(!paused));
 reducedMotion.addEventListener('change', (event) => setPaused(event.matches));
-
-const immersiveHidden = [...document.querySelectorAll('.skip-link, .site-header, .hero-content, .hero-footer, .inner-voyage, .next-voyage, .site-footer')];
-function setImmersive(value) {
-  immersive = value;
-  if (immersive) {
-    const previousBehavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = 'auto';
-    window.scrollTo(0, 0);
-    root.style.scrollBehavior = previousBehavior;
-  }
-  body.classList.toggle('is-immersive', immersive);
-  immersiveButton.setAttribute('aria-pressed', String(immersive));
-  immersiveButton.querySelector('.control-text').textContent = immersive ? '退出漫游' : '沉浸漫游';
-  immersiveHidden.forEach((element) => { element.inert = immersive; });
-  status.textContent = immersive ? '已进入沉浸漫游，按 Escape 键或点击退出漫游即可返回。' : '已退出沉浸漫游。';
-  universe.setActive(true);
-}
-immersiveButton.addEventListener('click', () => setImmersive(!immersive));
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && immersive) {
-    setImmersive(false);
-    immersiveButton.focus({ preventScroll: true });
+  if (event.code === 'Space' && !event.repeat && !event.target.closest('button')) {
+    event.preventDefault();
+    setPaused(!paused);
   }
 });
-
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('is-visible');
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.1 });
-document.querySelectorAll('.reveal').forEach((element) => revealObserver.observe(element));
-
-const heroObserver = new IntersectionObserver(([entry]) => universe.setActive(entry.isIntersecting || immersive));
-heroObserver.observe(hero);
-const navLinks = [...document.querySelectorAll('.nav-link')];
-const sectionObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    navLinks.forEach((link) => {
-      const current = link.hash === `#${entry.target.id}`;
-      link.classList.toggle('is-current', current);
-      if (current) link.setAttribute('aria-current', 'location');
-      else link.removeAttribute('aria-current');
-    });
-  });
-}, { rootMargin: '-15% 0px -50% 0px' });
-document.querySelectorAll('main > section').forEach((section) => sectionObserver.observe(section));
-
-const beliefs = [...document.querySelectorAll('.belief')];
-beliefs.forEach((belief) => belief.addEventListener('toggle', () => {
-  if (belief.open) beliefs.forEach((other) => { if (other !== belief) other.open = false; });
-}));
-
-document.querySelector('#year').textContent = String(new Date().getFullYear());
 window.addEventListener('resize', sizePointerCanvas, { passive: true });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     cancelAnimationFrame(pointerFrame);
     pointerFrame = 0;
+    context?.clearRect(0, 0, viewportWidth, viewportHeight);
+    motes.forEach((mote) => { mote.life = 0; });
     resetPointer();
   }
 });
 sizePointerCanvas();
 setPaused(paused);
-root.classList.add('js');

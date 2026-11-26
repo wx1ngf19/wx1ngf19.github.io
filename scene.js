@@ -42,34 +42,26 @@ const fragmentSource = `
   }
 
   vec3 sky(vec2 p) {
-    vec2 drift = uPointer * vec2(0.012, 0.007);
+    vec2 drift = uPointer * vec2(0.010, 0.006);
     vec2 q = p + drift;
-    vec3 color = mix(vec3(0.007, 0.018, 0.030), vec3(0.016, 0.042, 0.061), 1.0 - q.y);
+    vec3 color = mix(vec3(0.006, 0.012, 0.022), vec3(0.017, 0.039, 0.051), 1.0 - q.y);
+    float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1) * 0.045;
+    float cloud = fbm(q * 5.2 + vec2(7.0, 2.0));
+    float dust = fbm(vec2(q.x * 17.0, spine * 24.0) + 19.0);
+    float fine = noise(q * 54.0 + cloud * 2.8);
+    float band = exp(-pow(abs(spine + (cloud - 0.5) * 0.13) * 7.4, 1.45));
+    float core = exp(-pow(abs(spine) * 14.0, 1.2));
+    float knots = smoothstep(0.28, 0.78, cloud) * (0.45 + dust * 0.8);
+    vec3 stardust = mix(vec3(0.17, 0.25, 0.28), vec3(0.37, 0.29, 0.20), smoothstep(-0.45, 0.60, q.x));
+    color += stardust * band * knots * (0.58 + fine * 1.35);
+    color += vec3(0.28, 0.31, 0.30) * core * pow(dust, 2.0) * 0.72;
+    float rift = 1.0 - smoothstep(0.008, 0.056, abs(spine + (cloud - 0.5) * 0.11));
+    color *= 1.0 - rift * (0.4 + fine * 0.35);
+    color += vec3(0.021, 0.045, 0.047) * cloud * exp(-abs(spine) * 2.8);
 
-    float cloud = fbm(q * 4.4 + vec2(7.0, 2.0));
-    float dust = fbm(q * 12.0 + 19.0);
-    float band = exp(-pow(abs(q.y - 0.65 - q.x * 0.30) * 4.8, 1.35));
-    color += vec3(0.080, 0.115, 0.140) * band * cloud * (0.35 + dust);
-    color += vec3(0.045, 0.040, 0.032) * band * pow(cloud, 3.0);
-    color *= 0.7 + dust * 0.5;
-
-    vec2 center = vec2(0.035, 0.665) + drift * 0.7;
-    vec2 fromCenter = q - center;
-    float distance = length(fromCenter);
-    float radius = 0.208;
-    vec2 direction = fromCenter / max(distance, 0.0001);
-    float light = pow(max(dot(direction, normalize(vec2(-0.8, 0.55))), 0.0), 3.5);
-    float corona = exp(-abs(distance - radius) * 84.0);
-    color += vec3(0.40, 0.46, 0.45) * corona * (0.035 + light * 0.35);
-    color += vec3(0.82, 0.68, 0.43) * exp(-abs(distance - radius) * 420.0) * (0.04 + light * 0.75);
-    float disk = 1.0 - smoothstep(radius - 0.0015, radius + 0.0005, distance);
-    vec3 planet = vec3(0.006, 0.014, 0.023) + cloud * vec3(0.005, 0.010, 0.014);
-    color = mix(color, planet, disk);
-
-    float horizonGlow = exp(-abs(q.y - 0.294) * 21.0);
-    float middleGlow = exp(-pow((q.x - 0.02) * 1.4, 2.0));
-    color += vec3(0.10, 0.16, 0.17) * horizonGlow;
-    color += vec3(0.27, 0.22, 0.14) * horizonGlow * middleGlow * 0.6;
+    float horizonGlow = exp(-abs(q.y - 0.205) * 26.0);
+    color += vec3(0.065, 0.105, 0.11) * horizonGlow;
+    color += vec3(0.12, 0.075, 0.035) * horizonGlow * exp(-pow((q.x + 0.32) * 2.5, 2.0));
     return color;
   }
 
@@ -77,7 +69,7 @@ const fragmentSource = `
     vec2 uv = vUv;
     float aspect = uResolution.x / uResolution.y;
     vec2 p = vec2((uv.x - 0.5) * aspect, uv.y);
-    float horizon = 0.294;
+    float horizon = 0.205;
     vec3 color;
 
     if (uv.y >= horizon) {
@@ -91,14 +83,13 @@ const fragmentSource = `
       float wave = sin(water.y * 2.1 + swell * 5.8 + sin(water.x * 0.7 + time) * 0.55 - time);
       float crest = pow(max(wave, 0.0), 16.0);
       float fineCrest = pow(max(sin(water.y * 5.3 + smallWaves * 5.0 - time * 1.7), 0.0), 23.0);
-      float reflectionX = 0.025 + uPointer.x * 0.07 + (swell - 0.5) * depth * 0.5;
-      float reflection = exp(-pow((p.x - reflectionX) / (0.025 + depth * 0.72), 2.0));
+      float reflectionX = -0.40 + uPointer.x * 0.035 + (swell - 0.5) * depth * 0.5;
+      float reflection = exp(-pow((p.x - reflectionX) / (0.045 + depth * 0.72), 2.0));
       float wideReflection = exp(-pow((p.x + 0.2) / (0.20 + depth * 1.3), 2.0));
       float distanceFade = exp(-depth * 5.0);
-      vec3 reflectedSky = sky(vec2(p.x + (swell - 0.5) * depth * 0.2, horizon + depth * 0.4));
-      color = vec3(0.005, 0.017, 0.027) + reflectedSky * 0.24;
+      color = vec3(0.008, 0.021, 0.031) + vec3(0.012, 0.021, 0.024) * wideReflection;
       color += vec3(0.055, 0.12, 0.16) * (crest * 0.6 + fineCrest * 0.17) * wideReflection;
-      color += vec3(0.61, 0.51, 0.32) * reflection * (crest * 0.7 + fineCrest * 0.22) * distanceFade;
+      color += vec3(0.32, 0.24, 0.15) * reflection * (crest * 0.7 + fineCrest * 0.22) * distanceFade;
       color += vec3(0.19, 0.25, 0.25) * reflection * exp(-depth * 35.0) * (0.25 + smallWaves * 0.25);
       color += vec3(0.09, 0.15, 0.18) * exp(-depth * 75.0);
 
@@ -218,21 +209,137 @@ export function createUniverse(surface, starCanvas) {
 
   function prepareStars() {
     const random = randomGenerator(19870921);
-    const count = Math.min(650, Math.max(100, Math.floor(width * height / 2500)));
+    const count = Math.min(1800, Math.max(260, Math.floor(width * height / 1000)));
     stars = Array.from({ length: count }, (_, index) => {
       const x = random() * width;
-      let y = random() * height * 0.7;
-      if (index % 3 === 0) y = height * (0.39 - (x / width - 0.5) * 0.3 + (random() - 0.5) * 0.24);
+      let y = random() * height * 0.79;
+      if (index % 2 === 0) {
+        const qx = (x - width * 0.5) / height;
+        y = height * (0.52 - qx * 0.42 - Math.sin(qx * 2.1) * 0.045 + (random() - 0.5) * 0.23);
+      }
       return {
         x, y,
-        radius: random() * 0.7 + 0.25,
+        radius: random() * 0.65 + 0.20,
         depth: 0.3 + random() * 0.7,
-        alpha: 0.12 + random() * 0.57,
+        alpha: 0.14 + random() * 0.61,
         phase: random() * Math.PI * 2,
-        prominent: index % 53 === 0,
+        prominent: index % 127 === 0,
         warm: index % 7 === 0,
       };
     });
+  }
+
+  function drawCamp() {
+    const x = width * 0.215;
+    const y = height * 0.897;
+    const size = Math.max(12, Math.min(25, width * 0.04, height * 0.027));
+    const flicker = 0.91 + Math.sin(time * 5.4) * 0.045 + Math.sin(time * 8.7) * 0.035;
+    const glow = context.createRadialGradient(x, y - size * 0.4, 0, x, y, size * 7);
+    glow.addColorStop(0, `rgba(238, 125, 49, ${0.16 * flicker})`);
+    glow.addColorStop(0.35, 'rgba(190, 91, 35, .035)');
+    glow.addColorStop(1, 'rgba(190, 91, 35, 0)');
+    context.fillStyle = glow;
+    context.fillRect(x - size * 7, y - size * 7, size * 14, size * 14);
+
+    const shore = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .892], [.201, .89], [.235, .899], [.265, .914], [.293, .934], [.33, .941], [.352, .964], [.393, .978], [.43, 1]];
+    context.fillStyle = '#050b10';
+    context.beginPath();
+    shore.forEach(([sx, sy], index) => index ? context.lineTo(sx * width, sy * height) : context.moveTo(sx * width, sy * height));
+    context.lineTo(0, height);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = 'rgba(95, 112, 108, .22)';
+    context.lineWidth = 0.7;
+    context.beginPath();
+    shore.slice(0, 11).forEach(([sx, sy], index) => index ? context.lineTo(sx * width, sy * height) : context.moveTo(sx * width, sy * height));
+    context.stroke();
+
+    function pine(px, base, tall, seed) {
+      const random = randomGenerator(seed);
+      context.fillStyle = '#040a0e';
+      context.beginPath();
+      context.moveTo(px - tall * .012, base);
+      context.lineTo(px - tall * .006, base - tall);
+      context.lineTo(px + tall * .011, base);
+      context.fill();
+      for (let row = 0; row < 10; row += 1) {
+        const down = .10 + row * .075;
+        const spread = tall * (.035 + down * .24);
+        const by = base - tall * (1 - down);
+        context.beginPath();
+        context.moveTo(px, by - tall * .075);
+        context.lineTo(px - spread * (.85 + random() * .25), by + tall * .085);
+        context.lineTo(px - spread * .36, by + tall * .063);
+        context.lineTo(px - spread * .66, by + tall * .10);
+        context.lineTo(px, by + tall * .047);
+        context.lineTo(px + spread * .82, by + tall * .10);
+        context.lineTo(px + spread * .50, by + tall * .055);
+        context.lineTo(px + spread * (.9 + random() * .25), by + tall * .067);
+        context.closePath();
+        context.fill();
+      }
+    }
+    pine(width * .012, height * .878, Math.min(height * .285, width * .40), 41);
+    pine(width * .078, height * .883, Math.min(height * .172, width * .23), 19);
+    pine(width * .118, height * .887, Math.min(height * .102, width * .15), 63);
+
+    // Small, irregular stones catch the firelight along the ledge.
+    context.fillStyle = '#121411';
+    context.beginPath();
+    context.moveTo(x - size * 1.9, y + size * .3);
+    context.lineTo(x - size * 1.7, y - size * .04);
+    context.lineTo(x - size * 1.35, y - size * .12);
+    context.lineTo(x - size * 1.04, y + size * .25);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = 'rgba(168, 106, 58, .28)';
+    context.lineWidth = .8;
+    context.stroke();
+    context.lineCap = 'round';
+    context.strokeStyle = '#6b4229';
+    context.lineWidth = size * .15;
+    context.beginPath();
+    context.moveTo(x - size * .45, y + size * .06);
+    context.lineTo(x + size * .46, y + size * .31);
+    context.moveTo(x - size * .43, y + size * .28);
+    context.lineTo(x + size * .38, y + size * .03);
+    context.stroke();
+
+    context.save();
+    context.translate(x, y);
+    context.scale(size, size);
+    const sway = Math.sin(time * 4.3) * .1;
+    const flame = context.createLinearGradient(0, -1.25, 0, .2);
+    flame.addColorStop(0, '#e99748');
+    flame.addColorStop(.55, '#ef8238');
+    flame.addColorStop(1, '#bd4b23');
+    context.fillStyle = flame;
+    context.beginPath();
+    context.moveTo(-.34, .06);
+    context.bezierCurveTo(-.7, -.38, -.10, -.65, -.14 + sway, -1.25 * flicker);
+    context.bezierCurveTo(.22, -.94, .07, -.63, .20, -.54);
+    context.bezierCurveTo(.35, -.72, .40, -.80, .40 + sway, -.86);
+    context.bezierCurveTo(.62, -.32, .57, -.04, .28, .11);
+    context.closePath();
+    context.fill();
+    context.fillStyle = '#ffda8f';
+    context.beginPath();
+    context.moveTo(-.15, .03);
+    context.quadraticCurveTo(-.25, -.25, .02 + sway * .5, -.65 * flicker);
+    context.quadraticCurveTo(.04, -.31, .24, -.11);
+    context.quadraticCurveTo(.13, .15, -.15, .03);
+    context.fill();
+    context.restore();
+
+    for (let index = 0; index < 12; index += 1) {
+      const phase = (time * (.13 + index * .004) + index * .273) % 1;
+      const ex = x + Math.sin(phase * 5 + index * 3) * size * (.3 + phase * .8) + phase * size * .7;
+      const ey = y - size * (.7 + phase * 4.8);
+      context.fillStyle = `rgba(240, ${145 + index % 4 * 15}, 74, ${Math.sin(phase * Math.PI) * .48})`;
+      context.beginPath();
+      context.arc(ex, ey, .45 + index % 3 * .17, 0, Math.PI * 2);
+      context.fill();
+    }
   }
 
   function drawStars() {
@@ -243,7 +350,7 @@ export function createUniverse(surface, starCanvas) {
       context.strokeStyle = 'rgba(112, 159, 174, .09)';
       context.lineWidth = 0.7;
       for (let row = 0; row < 45; row += 1) {
-        const y = height * (0.71 + (row / 45) ** 2 * 0.29);
+        const y = height * (0.80 + (row / 45) ** 2 * 0.20);
         context.beginPath();
         for (let x = 0; x <= width + 20; x += 20) {
           const wave = Math.sin(x * 0.017 + row * 0.7 + time * 0.35) * (row / 45) * 5;
@@ -254,35 +361,52 @@ export function createUniverse(surface, starCanvas) {
       }
     }
 
-    const planetX = width * 0.5 + height * (0.035 - pointer.x * 0.0036);
-    const planetY = height * (0.335 + pointer.y * 0.0021);
-    const planetRadius = height * 0.207;
+    const near = [];
+    const pointerX = (pointer.x * .5 + .5) * width;
+    const pointerY = (.5 - pointer.y * .5) * height;
+    const seeking = !paused && Math.abs(target.x) + Math.abs(target.y) > .005;
     for (const star of stars) {
       const x = star.x + pointer.x * star.depth * 13;
       const y = star.y - pointer.y * star.depth * 9;
-      if (y < 5 || y > height * 0.699) continue;
-      if (renderer && Math.hypot(x - planetX, y - planetY) < planetRadius) continue;
-      const twinkle = 0.76 + Math.sin(time * 0.6 + star.phase) * 0.24;
-      let alpha = star.alpha * twinkle;
-      if (x > width * 0.16 && x < width * 0.84 && y > height * 0.3 && y < height * 0.56) alpha *= 0.5;
+      if (y < 5 || y > height * 0.790) continue;
+      const twinkle = 0.83 + Math.sin(time * 0.45 + star.phase) * 0.17;
+      const distance = Math.hypot(x - pointerX, y - pointerY);
+      const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
+      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35);
+      if (proximity > 0 && star.alpha > .36) near.push({ x, y, distance });
       const color = star.warm ? '222, 199, 155' : '193, 215, 228';
       context.fillStyle = `rgba(${color}, ${alpha})`;
       context.beginPath();
-      context.arc(x, y, star.radius, 0, Math.PI * 2);
+      context.arc(x, y, star.radius + (star.prominent ? .25 : 0), 0, Math.PI * 2);
       context.fill();
       if (star.prominent) {
-        const glow = context.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, `rgba(${color}, ${alpha * 0.6})`);
+        const glow = context.createRadialGradient(x, y, 0, x, y, 6);
+        glow.addColorStop(0, `rgba(${color}, ${alpha * 0.4})`);
         glow.addColorStop(1, `rgba(${color}, 0)`);
         context.fillStyle = glow;
-        context.fillRect(x - 8, y - 8, 16, 16);
+        context.fillRect(x - 6, y - 6, 12, 12);
         context.strokeStyle = `rgba(${color}, ${alpha * 0.45})`;
         context.lineWidth = 0.5;
         context.beginPath();
-        context.moveTo(x - 4, y);
-        context.lineTo(x + 4, y);
-        context.moveTo(x, y - 4);
-        context.lineTo(x, y + 4);
+        context.moveTo(x - 3, y);
+        context.lineTo(x + 3, y);
+        context.moveTo(x, y - 3);
+        context.lineTo(x, y + 3);
+        context.stroke();
+      }
+    }
+
+    if (near.length > 1) {
+      near.sort((a, b) => a.distance - b.distance);
+      const chosen = near.slice(0, 4).sort((a, b) => Math.atan2(a.y - pointerY, a.x - pointerX) - Math.atan2(b.y - pointerY, b.x - pointerX));
+      context.lineWidth = .5;
+      for (let index = 1; index < chosen.length; index += 1) {
+        const a = chosen[index - 1];
+        const b = chosen[index];
+        context.strokeStyle = `rgba(212, 205, 180, ${.20 * (1 - Math.max(a.distance, b.distance) / 115)})`;
+        context.beginPath();
+        context.moveTo(a.x, a.y);
+        context.lineTo(b.x, b.y);
         context.stroke();
       }
     }
@@ -304,6 +428,7 @@ export function createUniverse(surface, starCanvas) {
       context.lineTo(x + tailX, y + tailY);
       context.stroke();
     }
+    drawCamp();
   }
 
   function draw() {
