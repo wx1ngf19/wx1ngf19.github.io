@@ -94,7 +94,7 @@ function pine(ctx, x, base, height, phase, time, world, distant = false) {
 
 function shore(ctx, width, height, x, y, size, flicker, world) {
   const compact = width < 1000 && width / height < 1.65;
-  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], ...(compact ? [[.35, .936], [.40, .945], [.45, .967], [.50, .985], [.54, 1]] : [[.34, .944], [.365, .966], [.403, .983], [.44, 1]])];
+  const outline = [[0, .872], [.037, .866], [.079, .880], [.12, .875], [.165, .883], [.205, .880], [.245, .881], [.265, .887], [.285, .900], [.31, .925], ...(compact ? [[.35, .931], [.40, .935], [.45, .946], [.50, .960], [.55, .980], [.59, 1]] : [[.34, .944], [.365, .966], [.403, .983], [.44, 1]])];
   const points = outline.map(([px, py]) => [px * width, py * height]);
   const earth = ctx.createLinearGradient(0, height * .87, 0, height);
   earth.addColorStop(0, material([11, 21, 25], [83, 92, 73], world, .5));
@@ -130,9 +130,9 @@ function shore(ctx, width, height, x, y, size, flicker, world) {
 
 function cabin(ctx, width, height, world) {
   const compact = width < 1000 && width / height < 1.65;
-  const cabinWidth = Math.min(168, Math.max(78, width * .116), height * .35);
+  const cabinWidth = Math.min(210, Math.max(98, width * .145), height * .44);
   const scale = cabinWidth / 100;
-  const x = width * (compact ? .33 : .110);
+  const x = width * (compact ? .35 : .092);
   const y = height * (compact ? .975 : .916);
   const light = world.houseLight;
   ctx.save();

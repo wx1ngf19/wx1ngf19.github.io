@@ -1,4 +1,4 @@
-import { createUniverse } from './scene.js?v=woodland-1';
+import { createUniverse } from './scene.js?v=woodland-2';
 import { createSoundtrack } from './music.js?v=woodland-1';
 
 const root = document.documentElement;
