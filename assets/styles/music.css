@@ -1,0 +1,39 @@
+:root { color-scheme: dark; font: 15px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #091219; color: #d9e4e5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { width: min(760px, 100%); margin: auto; padding: 48px 26px 80px; }
+header { padding-bottom: 22px; }
+h1, h2, h3, p { margin-top: 0; }
+h1 { margin-top: 42px; font: 400 clamp(27px, 5vw, 39px)/1.2 Georgia, serif; color: #f0e9d6; letter-spacing: -.025em; }
+h2 { font-size: 15px; font-weight: 500; color: #9cbbb9; margin: 24px 0 12px; }
+h3 { font-size: 16px; line-height: 1.4; font-weight: 500; margin-bottom: 4px; }
+p { color: #97abae; }
+a { color: #b4d3cd; text-underline-offset: 4px; overflow-wrap: anywhere; }
+a:hover { color: #f2e5c4; }
+button { font: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid #d5cc9f; outline-offset: 5px; }
+.return { text-decoration: none; font-size: 15px; letter-spacing: .08em; }
+.track-list { border-top: 1px solid #23353b; }
+.track { border: 0; border-bottom: 1px solid #23353b; background: transparent; color: inherit; width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 13px; align-items: center; text-align: left; text-decoration: none; padding: 18px 3px; cursor: pointer; }
+.track:hover, .track[aria-pressed="true"] { background: #10222a; }
+.track-number { font-size: 11px; color: #6b8a8b; font-variant-numeric: tabular-nums; }
+.track-title, .track-artist { display: block; overflow-wrap: anywhere; }
+.track-title { line-height: 1.45; }
+.track-artist { color: #8ea5a9; font-size: 12px; margin-top: 3px; }
+.track-kind { color: #a4b2a3; font-size: 11px; white-space: nowrap; }
+.recording { background: #102029; border: 1px solid #30454a; border-radius: 9px; padding: 19px; margin: 20px 0 24px; scroll-margin-top: 22px; }
+.recording-heading { display: flex; gap: 16px; justify-content: space-between; align-items: start; }
+.recording-heading p { margin-bottom: 18px; font-size: 13px; }
+#close-player { background: transparent; border: 0; color: #c1d4d2; font-size: 26px; line-height: 1; cursor: pointer; width: 44px; height: 44px; flex: 0 0 44px; padding: 0; margin: -8px -8px 0 0; }
+#official-player iframe { display: block; width: 100%; border: 0; }
+#official-player .bandcamp { height: 42px; }
+#official-source { display: inline-block; margin-top: 14px; font-size: 12px; }
+.background { border-top: 1px solid #304148; margin-top: 50px; padding-top: 22px; }
+summary { color: #aec7c5; cursor: pointer; margin-bottom: 18px; }
+.background p { font-size: 13px; }
+.credit { border-top: 1px solid #20323a; padding: 19px 0; scroll-margin-top: 24px; }
+.credit:target { background: #10262b; box-shadow: 0 0 0 10px #10262b; }
+.credit p { font-size: 12px; overflow-wrap: anywhere; margin-bottom: 6px; }
+.credit-links { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; }
+@media (max-width: 480px) { main { padding: 28px 19px 60px; } h1 { margin-top: 30px; } .track { gap: 9px; } .track-kind { font-size: 10px; } .recording { padding: 13px; } }

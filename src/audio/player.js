@@ -1,5 +1,5 @@
-import { soundtracks } from './assets/audio/library.js?v=reverie-5';
-import { sampleWorld } from './world.js?v=reverie-5';
+import { soundtracks } from './library.js?v=reverie-7';
+import { sampleWorld } from '../world/time.js?v=reverie-7';
 
 const LISTENING_VOLUME = .42;
 
@@ -57,9 +57,9 @@ export function createSoundtrack(audio, button) {
     button.title = currentTrack ? `${action} — ${currentTrack.title} · ${currentTrack.artist}` : action;
     if (credit && currentTrack) {
       credit.hidden = false;
-      credit.href = new URL(`./assets/audio/credits.html#${encodeURIComponent(currentTrack.id)}`, document.baseURI).href;
-      credit.title = `${currentTrack.title} · ${currentTrack.artist} · ${currentTrack.license}`;
-      credit.setAttribute('aria-label', `音乐来源与署名：${currentTrack.title}，${currentTrack.artist}`);
+      credit.href = new URL(`./pages/music.html#${encodeURIComponent(currentTrack.id)}`, document.baseURI).href;
+      credit.title = `精选曲目与音乐署名 · ${currentTrack.title}`;
+      credit.setAttribute('aria-label', `精选曲目与音乐署名：${currentTrack.title}，${currentTrack.artist}`);
     }
   }
 

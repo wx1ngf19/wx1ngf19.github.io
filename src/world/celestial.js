@@ -1,6 +1,6 @@
 // Each night is a new fictional astronomical composition, rather than a claim
 // that real galaxies change shape overnight. Extended galaxies stay diffuse;
-// only the foreground stars receive atmospheric scintillation in scene.js.
+// only the foreground stars receive atmospheric scintillation in the renderer.
 // Structure: https://science.nasa.gov/universe/galaxies/types/
 // Dust absorption: https://www.eso.org/public/products/mountedimages/mounted_0193/
 // Scintillation: https://starchild.gsfc.nasa.gov/docs/StarChild/questions/question26.html

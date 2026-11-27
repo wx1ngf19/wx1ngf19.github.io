@@ -1,6 +1,6 @@
-import { cabinGeometry as house, cabinShadowVertices, entryGeometry } from './cabin-geometry.js?v=reverie-5';
-import { shoreComposition, foregroundFrame } from './shore-geometry.js?v=reverie-6';
-import { groundLights, lightAt, projectShadow, shadowHull } from './ground-lighting.js?v=reverie-5';
+import { cabinGeometry as house, cabinShadowVertices, entryGeometry } from './geometry/cabin.js?v=reverie-7';
+import { shoreComposition, foregroundFrame } from './geometry/shore.js?v=reverie-7';
+import { groundLights, lightAt, projectShadow, shadowHull } from './lighting.js?v=reverie-7';
 
 const TAU = Math.PI * 2;
 

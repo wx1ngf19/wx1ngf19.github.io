@@ -1,338 +1,108 @@
-MUSIC CREDITS
+Reverie — background music credits
 
-24 complete instrumental recordings by 24 different creators, selected for gentle daytime and nighttime listening. Each recording keeps its own license. Credits and source links are listed below; the original creator retains copyright where applicable.
+20 complete instrumental recordings. Each track retains its own license.
+Complete recordings transcoded to MP3, 128 kbps, 44.1 kHz stereo; no cuts, repetition, or speed changes.
 
-Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
+Day
 
-Locations below follow the linked creator biographies. They may describe a place of residence or origin, and are not inferred from names or musical styles. Unverified locations are left unspecified.
-
-License summaries: CC0 permits reuse without mandatory attribution; CC BY requires attribution; CC BY-NC additionally restricts commercial use. Follow each linked license for its terms.
-
-Day · 白天
-========
-
-[vaporware] Vaporware
-Artist: The Cynic Project
-Artist website: https://opengameart.org/users/cynicmusic
-Source: https://opengameart.org/content/calm-piano-1-vaporware
-Original recording file: https://opengameart.org/sites/default/files/003_Vaporware_2.mp3
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Vaporware by The Cynic Project — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Calm piano melody with relaxing ambient pads
-Local file: ./assets/audio/vaporware.mp3
-
-[mystical-piano] Mystical Piano
-Artist: Indieteur
-Artist website: https://opengameart.org/users/indieteur
+Mystical Piano — Indieteur
+Mystical Piano by Indieteur — CC0 1.0 Universal.
 Source: https://opengameart.org/content/mystical-piano
-Original recording file: https://opengameart.org/sites/default/files/Mystical%20Piano.Wav
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Mystical Piano by Indieteur — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Calm, meditative solo piano
-Local file: ./assets/audio/mystical-piano.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[slow-stride] Slow Stride
-Artist: isaiah658
-Artist website: https://opengameart.org/users/isaiah658
-Source: https://opengameart.org/content/slow-stride
-Original recording file: https://opengameart.org/sites/default/files/Slow%20Stride%20Loop.flac
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Slow Stride by isaiah658 — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow, smooth and relaxing instrumental
-Local file: ./assets/audio/slow-stride.mp3
-
-[style-of-harp] Style of Harp
-Artist: Umplix
-Artist website: https://opengameart.org/users/umplix
+Style of Harp — Umplix
+Style of Harp by Umplix — CC0 1.0 Universal.
 Source: https://opengameart.org/content/style-of-harp
-Original recording file: https://opengameart.org/sites/default/files/_style_of_harp.wav
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Style of Harp by Umplix — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Calm harp, piano and cello
-Local file: ./assets/audio/style-of-harp.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[water-lily] Water Lily
-Artist: Kevin MacLeod
-Artist website: https://incompetech.com/
+Water Lily — Kevin MacLeod
+Water Lily — Kevin MacLeod (incompetech.com). Licensed under Creative Commons: By Attribution 4.0 License.
 Source: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1400035
-Original recording file: https://incompetech.com/music/royalty-free/mp3-royaltyfree/Water%20Lily.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Water Lily — Kevin MacLeod (incompetech.com). Licensed under Creative Commons: By Attribution 4.0 License.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle piano and cello; 62 BPM
-Local file: ./assets/audio/water-lily.mp3
-License evidence: https://incompetech.com/music/royalty-free/licenses/
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[yearning] Yearning
-Artist: Shane Ivers
-Artist website: https://www.silvermansound.com/
+Yearning — Shane Ivers
+Yearning by Shane Ivers — https://www.silvermansound.com — CC BY 4.0.
 Source: https://freemusicarchive.org/music/shane-ivers/single/yearning/
-Original recording file: https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/Uh09nZgYS5quofpfqKY35ScphkVxwGyIQDVTtPOp.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Yearning by Shane Ivers — https://www.silvermansound.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Sparse relaxed solo piano; 75 BPM
-Local file: ./assets/audio/yearning.mp3
-Location: United Kingdom
-Biography source: https://silvermansound.bandcamp.com/album/silverman-sound-studios-the-whole-lot
-Location evidence: The composer’s own Bandcamp profile identifies Buckingham, United Kingdom.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[paper-wings] Paper Wings
-Artist: Jason Shaw
-Artist website: https://audionautix.com/
+Paper Wings — Jason Shaw
+Paper Wings by Jason Shaw / Audionautix — https://audionautix.com — CC BY 4.0.
 Source: https://audionautix.com/free-music/acoustic
-Original recording file: https://audionautix.com/Music/PaperWings.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Paper Wings by Jason Shaw / Audionautix — https://audionautix.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow calming acoustic instrumental
-Local file: ./assets/audio/paper-wings.mp3
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[pleasant-creek] Pleasant Creek
-Artist: Matthew Pablo
-Artist website: https://www.matthewpablo.com/
+Pleasant Creek — Matthew Pablo
+Pleasant Creek by Matthew Pablo — http://www.matthewpablo.com — CC BY 3.0.
 Source: https://opengameart.org/content/pleasant-creek
-Original recording file: https://opengameart.org/sites/default/files/Pleasant%20Creek%20Pack.zip
-Archive entry (complete recording, not the loop): Pleasant Creek Pack/Pleasant Creek.mp3
-License: CC BY 3.0
-License URL: https://creativecommons.org/licenses/by/3.0/
-Attribution: Pleasant Creek by Matthew Pablo — http://www.matthewpablo.com — CC BY 3.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Calm peaceful piano and strings
-Local file: ./assets/audio/pleasant-creek.mp3
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/
 
-[piano-emotional-solo-139] Piano Emotional Solo 139
-Artist: Tozan
-Artist website: https://opengameart.org/users/tozan
+Piano Emotional Solo 139 — Tozan
+Piano Emotional Solo 139 by Tozan — CC0 1.0 Universal.
 Source: https://opengameart.org/content/piano-emotional-solo-139
-Original recording file: https://opengameart.org/sites/default/files/pianoemo139_0.ogg
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Piano Emotional Solo 139 by Tozan — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle, soft piano with a slow swing
-Local file: ./assets/audio/piano-emotional-solo-139.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[emotional-piano-improvisation] Emotional Piano Improvisation
-Artist: Alexander Nakarada
-Artist website: https://creatorchords.com/
+Emotional Piano Improvisation — Alexander Nakarada
+Emotional Piano Improvisation by Alexander Nakarada — https://creatorchords.com — CC BY 4.0.
 Source: https://creatorchords.com/music/emotional-piano-improvisation/
-Original recording file: https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Emotional_Piano_Improvisation.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Emotional Piano Improvisation by Alexander Nakarada — https://creatorchords.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle improvised solo piano
-Local file: ./assets/audio/emotional-piano-improvisation.mp3
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[saying-goodbye-in-the-rain] Saying Goodbye in the Rain (Piano)
-Artist: Jelsonic
-Artist website: https://jelsonic.com/
+Saying Goodbye in the Rain (Piano) — Jelsonic
+Saying Goodbye in the Rain (Piano) by Jelsonic / Jeremy Wray — https://jelsonic.com — CC BY 4.0.
 Source: https://freemusicarchive.org/music/Jelsonic/Various_Moods/jelsonic-saying-goodbye-piano/
-Original recording file: https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Jelsonic/Various_Moods/Jelsonic_-_Saying_Goodbye_In_The_Rain_piano.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Saying Goodbye in the Rain (Piano) by Jelsonic / Jeremy Wray — https://jelsonic.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle slow solo piano
-Local file: ./assets/audio/saying-goodbye-in-the-rain.mp3
-Location: United Kingdom
-Biography source: https://jelsonic.com/about/
-Location evidence: The creator’s official biography identifies Jeremy Wray as a London, UK-based composer.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[in-this-moment] In This Moment
-Artist: Scott Buckley
-Artist website: https://www.scottbuckley.com.au/
+In This Moment — Scott Buckley
+In This Moment by Scott Buckley — released under CC BY 4.0. www.scottbuckley.com.au
 Source: https://www.scottbuckley.com.au/library/in-this-moment/
-Original recording file: https://www.scottbuckley.com.au/library/wp-content/uploads/2026/08/InThisMoment.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: In This Moment by Scott Buckley — released under CC BY 4.0. www.scottbuckley.com.au
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Solo piano meditation
-Local file: ./assets/audio/in-this-moment.mp3
-Location: Australia
-Biography source: https://www.scottbuckley.com.au/about/
-Location evidence: The composer’s official biography identifies him as Australian and based in Brisbane, Australia.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-Night · 夜晚
-==========
+Night
 
-[first-light-particles] First Light Particles
-Artist: Yoiyami
-Artist website: https://opengameart.org/users/yoiyami
+First Light Particles — Yoiyami
+First Light Particles by Yoiyami — CC0 1.0 Universal.
 Source: https://opengameart.org/node/182244
-Original recording file: https://opengameart.org/sites/default/files/first_light_particles_0.wav
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: First Light Particles by Yoiyami — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle, minimal and ethereal piano
-Local file: ./assets/audio/night-sky.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[slow-piano-intermission] Slow Piano Intermission
-Artist: Julie Damsgaard / Spring Spring
-Artist website: https://opengameart.org/users/spring-spring
+Slow Piano Intermission — Julie Damsgaard / Spring Spring
+Slow Piano Intermission by Julie Damsgaard / Spring Spring — CC0 1.0 Universal.
 Source: https://opengameart.org/content/slow-piano-intermission
-Original recording file: https://opengameart.org/sites/default/files/slow%20piano%20intermission_0.ogg
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Slow Piano Intermission by Julie Damsgaard / Spring Spring — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow piano intermission
-Local file: ./assets/audio/slow-piano-intermission.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[emotional-piano] Emotional Piano — Solo
-Artist: Centurion_of_war
-Artist website: https://opengameart.org/users/centurionofwar
+Emotional Piano — Solo — Centurion_of_war
+Emotional Piano — Solo by Centurion_of_war — CC0 1.0 Universal.
 Source: https://opengameart.org/content/emotional-piano-0
-Original recording file: https://opengameart.org/sites/default/files/emotional_piano_solo_0.ogg
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Emotional Piano — Solo by Centurion_of_war — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Soft emotional solo piano
-Local file: ./assets/audio/emotional-piano.mp3
+License: CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/
 
-[quiet-night] Quiet Night
-Artist: Tokyo Music Walker
-Artist website: https://soundcloud.com/user-356546060
+Quiet Night — Tokyo Music Walker
+Quiet Night by Tokyo Music Walker — https://soundcloud.com/user-356546060 — Creative Commons Attribution 3.0 — Music promoted by https://www.free-stock-music.com.
 Source: https://www.youtube.com/watch?v=ESN-lbr9Ff4
-Original recording file: https://www.free-stock-music.com/music/tokyo-music-walker/mp3/tokyo-music-walker-quiet-night.mp3
-License: CC BY 3.0
-License URL: https://creativecommons.org/licenses/by/3.0/
-Attribution: Quiet Night by Tokyo Music Walker — https://soundcloud.com/user-356546060 — Creative Commons Attribution 3.0 — Music promoted by https://www.free-stock-music.com.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Quiet gentle lo-fi piano and jazz; 77 BPM
-Local file: ./assets/audio/quiet-night.mp3
-Location: Japan
-Biography source: https://www.youtube.com/channel/UC3lLfvhpPGtwd5qD25cMDcA/about
-Location evidence: The creator’s official channel identifies T. Nakata as a music producer from Japan.
+License: CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/
 
-[new-york-nocturne] Reminiscences of New York, Book 1 — No. 3: Nocturne
-Artist: Shuwen Zhang (张舒文)
-Artist website: https://imslp.org/wiki/User:Shuwen_Zhang
+Reminiscences of New York, Book 1 — No. 3: Nocturne — Shuwen Zhang (张舒文)
+No. 3: Nocturne, from Reminiscences of New York, Book 1 — composed and performed by Shuwen Zhang (张舒文). Source: IMSLP, recording #426710. Licensed under CC BY-NC 4.0.
 Source: https://imslp.org/wiki/Reminiscences_of_New_York,_Book_1_(Zhang,_Shuwen)
-Original recording file: https://s9.imslp.org/files/imglnks/usimg/5/5b/IMSLP426710-PMLP692942-Reminiscences_of_New_York-03-Nocturne.mp3
-License: CC BY-NC 4.0
-License URL: https://creativecommons.org/licenses/by-nc/4.0/
-Attribution: No. 3: Nocturne, from Reminiscences of New York, Book 1 — composed and performed by Shuwen Zhang (张舒文). Source: IMSLP, recording #426710. Licensed under CC BY-NC 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Contemplative solo piano nocturne; performed by the composer
-Local file: ./assets/audio/new-york-nocturne.mp3
-Location: China
-Biography source: https://imslp.org/wiki/User:Shuwen_Zhang
-Location evidence: The composer and pianist’s own biography states that he teaches piano at Zhejiang Conservatory of Music, China; his undergraduate piano degree is from Xi’an Conservatory of Music.
-Use condition: Noncommercial use only. This personal, advertisement-free art homepage does not grant commercial reuse of this recording.
+License: CC BY-NC 4.0 — https://creativecommons.org/licenses/by-nc/4.0/
 
-[vampires-piano] Vampire’s Piano
-Artist: TAD
-Artist website: https://opengameart.org/users/tad
-Source: https://opengameart.org/content/vampires-piano
-Original recording file: https://opengameart.org/sites/default/files/vampires_piano_6.mp3
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Vampire’s Piano by TAD — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Quiet solo piano
-Local file: ./assets/audio/vampires-piano.mp3
-
-[fog] Fog
-Artist: Sergey Cheremisinov
-Artist website: https://s-cheremisinov.com/
+Fog — Sergey Cheremisinov
+Fog by Sergey Cheremisinov — s-cheremisinov.com — CC BY 4.0.
 Source: https://freemusicarchive.org/music/Sergey_Cheremisinov/Charms/Sergey_Cheremisinov_-_Charms_-_05_Fog
-Original recording file: https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Sergey_Cheremisinov/Charms/Sergey_Cheremisinov_-_05_-_Fog.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Fog by Sergey Cheremisinov — s-cheremisinov.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow atmospheric neoclassical instrumental
-Local file: ./assets/audio/fog.mp3
-License evidence: https://s-cheremisinov.com/how-to-use
-Location: Russia
-Biography source: https://s-cheremisinov.com/music
-Location evidence: The composer’s official biography states he is currently based in Russia.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[slow-lights] Slow Lights
-Artist: Lee Rosevere
-Artist website: https://freemusicarchive.org/music/Lee_Rosevere/
+Slow Lights — Lee Rosevere
+Slow Lights by Lee Rosevere, from Music for Podcasts: Ambient — Free Music Archive — CC BY 4.0.
 Source: https://freemusicarchive.org/music/lee-rosevere/music-for-podcasts-ambient/slow-lights/
-Original recording file: https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/cdIEuE8Y4CeQ1OMMfKf1loopkPg8UfKiNjuTwZlI.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Slow Lights by Lee Rosevere, from Music for Podcasts: Ambient — Free Music Archive — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow ambient instrumental
-Local file: ./assets/audio/slow-lights.mp3
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[what-does-anybody-know] What Does Anybody Know About Anything
-Artist: Chris Zabriskie
-Artist website: https://chriszabriskie.com/
+What Does Anybody Know About Anything — Chris Zabriskie
+What Does Anybody Know About Anything by Chris Zabriskie — chriszabriskie.com — CC BY 4.0.
 Source: https://chriszabriskie.com/dtv/
-Original recording file: https://audio.chriszabriskie.com/dtv/dtv-02.m4a
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: What Does Anybody Know About Anything by Chris Zabriskie — chriszabriskie.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow minimalist piano and ambient instrumental
-Local file: ./assets/audio/what-does-anybody-know.mp3
-License evidence: https://chriszabriskie.com/use/
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[shizima3-piano] Shizima3 (Piano Solo)
-Artist: PeriTune / むつき醒 (Sei Mutsuki)
-Artist website: https://peritune.com/about/
+Shizima3 (Piano Solo) — PeriTune / むつき醒 (Sei Mutsuki)
+Shizima3 (Piano Solo) by PeriTune / むつき醒 (Sei Mutsuki) — https://peritune.com — CC BY 4.0.
 Source: https://peritune.com/blog/2018/06/17/shizima3/
-Original recording file: https://peritune.com/music/PerituneMaterial_Shizima3_Piano.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: Shizima3 (Piano Solo) by PeriTune / むつき醒 (Sei Mutsuki) — https://peritune.com — CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Quiet, gentle Japanese-style solo piano; 82 BPM
-Local file: ./assets/audio/shizima3-piano.mp3
-License evidence: https://peritune.com/about/
-Location: Japan
-Biography source: https://peritune.itch.io/
-Location evidence: The creator’s own itch.io profile explicitly identifies them as a Japanese music creator; the linked official website identifies PeriTune as むつき醒 (Sei Mutsuki).
-Use condition: First published June 17, 2018. The creator’s current terms explicitly retain CC BY 4.0 for works published before March 2026.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-[contemplation] Contemplation
-Artist: Joth
-Artist website: https://opengameart.org/users/joth
-Source: https://opengameart.org/content/contemplation-0
-Original recording file: https://opengameart.org/sites/default/files/Contemplation.mp3
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Contemplation by Joth — CC0 1.0 Universal.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Quiet, thoughtful ambient soundscape
-Local file: ./assets/audio/contemplation.mp3
-
-[anata-wo-shiritakute] あなたを知りたくて (Anata wo Shiritakute)
-Artist: OtoLogic
-Artist website: https://otologic.jp/
+あなたを知りたくて (Anata wo Shiritakute) — OtoLogic
+あなたを知りたくて (Anata wo Shiritakute) — music by OtoLogic (https://otologic.jp), licensed under CC BY 4.0.
 Source: https://otologic.jp/free/bgm/pop-music-piano01.html
-Original recording file: https://otologic.jp/sounds/bgm/mp3-zip/anata%20wo%20siritakute-mp3.zip
-Archive entry (complete recording, not the loop): anata wo siritakute/anata wo siritakute.mp3
-License: CC BY 4.0
-License URL: https://creativecommons.org/licenses/by/4.0/
-Attribution: あなたを知りたくて (Anata wo Shiritakute) — music by OtoLogic (https://otologic.jp), licensed under CC BY 4.0.
-Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Gentle lyrical piano ballad with light harp doubling; approximately 70 BPM; no drums
-Local file: ./assets/audio/anata-wo-shiritakute.mp3
-License evidence: https://otologic.jp/free/license.html
-Location: Japan
-Biography source: https://otologic.jp/about/about_us.html
-Location evidence: The creator’s own biography identifies the operator as Honda, born in Niigata and currently living in Niigata City, Japan.
-Redistribution evidence: https://otologic.jp/free/faq.html
-Use condition: OtoLogic’s official FAQ explicitly permits redistribution of the recordings when the required attribution is preserved. The complete main-melody version is used, not the alternate narration accompaniment.
+License: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/

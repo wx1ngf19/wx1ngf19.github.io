@@ -1,20 +1,6 @@
-// Complete, independently created recordings. See credits.html for attribution and source evidence.
+// Directly playable instrumental recordings. Source and license details: assets/audio/CREDITS.txt.
 export const soundtracks = {
   "day": [
-    {
-      "id": "vaporware",
-      "title": "Vaporware",
-      "artist": "The Cynic Project",
-      "src": "./assets/audio/vaporware.mp3",
-      "source": "https://opengameart.org/content/calm-piano-1-vaporware",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://opengameart.org/users/cynicmusic",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": null,
-      "bioSource": null,
-      "style": "Calm piano melody with relaxing ambient pads",
-      "attribution": "Vaporware by The Cynic Project — CC0 1.0 Universal."
-    },
     {
       "id": "mystical-piano",
       "title": "Mystical Piano",
@@ -28,20 +14,6 @@ export const soundtracks = {
       "bioSource": null,
       "style": "Calm, meditative solo piano",
       "attribution": "Mystical Piano by Indieteur — CC0 1.0 Universal."
-    },
-    {
-      "id": "slow-stride",
-      "title": "Slow Stride",
-      "artist": "isaiah658",
-      "src": "./assets/audio/slow-stride.mp3",
-      "source": "https://opengameart.org/content/slow-stride",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://opengameart.org/users/isaiah658",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": null,
-      "bioSource": null,
-      "style": "Slow, smooth and relaxing instrumental",
-      "attribution": "Slow Stride by isaiah658 — CC0 1.0 Universal."
     },
     {
       "id": "style-of-harp",
@@ -242,20 +214,6 @@ export const soundtracks = {
       "attribution": "No. 3: Nocturne, from Reminiscences of New York, Book 1 — composed and performed by Shuwen Zhang (张舒文). Source: IMSLP, recording #426710. Licensed under CC BY-NC 4.0."
     },
     {
-      "id": "vampires-piano",
-      "title": "Vampire’s Piano",
-      "artist": "TAD",
-      "src": "./assets/audio/vampires-piano.mp3",
-      "source": "https://opengameart.org/content/vampires-piano",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://opengameart.org/users/tad",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": null,
-      "bioSource": null,
-      "style": "Quiet solo piano",
-      "attribution": "Vampire’s Piano by TAD — CC0 1.0 Universal."
-    },
-    {
       "id": "fog",
       "title": "Fog",
       "artist": "Sergey Cheremisinov",
@@ -310,20 +268,6 @@ export const soundtracks = {
       "bioSource": "https://peritune.itch.io/",
       "style": "Quiet, gentle Japanese-style solo piano; 82 BPM",
       "attribution": "Shizima3 (Piano Solo) by PeriTune / むつき醒 (Sei Mutsuki) — https://peritune.com — CC BY 4.0."
-    },
-    {
-      "id": "contemplation",
-      "title": "Contemplation",
-      "artist": "Joth",
-      "src": "./assets/audio/contemplation.mp3",
-      "source": "https://opengameart.org/content/contemplation-0",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://opengameart.org/users/joth",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": null,
-      "bioSource": null,
-      "style": "Quiet, thoughtful ambient soundscape",
-      "attribution": "Contemplation by Joth — CC0 1.0 Universal."
     },
     {
       "id": "anata-wo-shiritakute",

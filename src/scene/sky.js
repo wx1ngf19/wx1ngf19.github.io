@@ -1,5 +1,5 @@
-import { SEA_LEVEL } from './world.js?v=reverie-5';
-import { atmosphereSource } from './atmosphere.js?v=reverie-5';
+import { SEA_LEVEL } from '../world/time.js?v=reverie-7';
+import { atmosphereSource } from './atmosphere.js?v=reverie-7';
 
 export const fragmentSource = `
 precision highp float;
