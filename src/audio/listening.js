@@ -1,4 +1,4 @@
-import { requestedTracks } from './requested.js?v=reverie-8';
+import { requestedTracks } from './requested.js?v=reverie-9';
 
 const list = document.querySelector('#selected-tracks');
 const recording = document.querySelector('#recording');
@@ -25,21 +25,12 @@ function closePlayer(restoreFocus = true) {
 function select(track) {
   closePlayer(false);
   selectedId = track.id;
-  if (track.src) {
-    const audio = document.createElement('audio');
-    audio.src = track.src;
-    audio.controls = true;
-    audio.preload = 'none';
-    audio.setAttribute('aria-label', `${track.title} · ${track.artist}`);
-    player.append(audio);
-  } else {
-    const frame = document.createElement('iframe');
-    frame.src = track.embedUrl;
-    frame.title = `${track.title} · ${track.artist} · Official player`;
-    frame.className = track.provider;
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    player.append(frame);
-  }
+  const audio = document.createElement('audio');
+  audio.src = track.src;
+  audio.controls = true;
+  audio.preload = 'none';
+  audio.setAttribute('aria-label', `${track.title} · ${track.artist}`);
+  player.append(audio);
   document.querySelector('#recording-title').textContent = track.title;
   document.querySelector('#recording-artist').textContent = `${track.artist} · ${track.album}`;
   document.querySelector('#official-source').href = track.source;
@@ -50,28 +41,17 @@ function select(track) {
 }
 
 requestedTracks.forEach((track, index) => {
-  const external = track.provider === 'youtube';
-  const button = element(external ? 'a' : 'button', 'track');
+  const button = element('button', 'track');
   button.id = track.id;
   button.dataset.track = track.id;
-  if (external) {
-    button.href = track.source;
-    button.target = '_blank';
-    button.rel = 'noopener noreferrer';
-    button.setAttribute('aria-label', `${track.title} · ${track.artist} · 前往官方页面播放`);
-  } else {
-    button.type = 'button';
-    button.setAttribute('aria-pressed', 'false');
-  }
+  button.type = 'button';
+  button.setAttribute('aria-pressed', 'false');
   button.append(element('span', 'track-number', String(index + 1).padStart(2, '0')));
   const label = element('span');
   label.append(element('span', 'track-title', track.title), element('span', 'track-artist', track.artist));
-  const kind = track.kind === 'original' ? '原版 · 人声' : '纯音乐';
-  button.append(label, element('span', 'track-kind', `${kind}${external ? ' ↗' : ''}`));
-  if (!external) {
-    button.addEventListener('click', () => select(track));
-    buttons.set(track.id, button);
-  }
+  button.append(label, element('span', 'track-kind', '纯音乐'));
+  button.addEventListener('click', () => select(track));
+  buttons.set(track.id, button);
   list.append(button);
 });
 

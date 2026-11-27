@@ -26,8 +26,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .recording-heading { display: flex; gap: 16px; justify-content: space-between; align-items: start; }
 .recording-heading p { margin-bottom: 18px; font-size: 13px; }
 #close-player { background: transparent; border: 0; color: #c1d4d2; font-size: 26px; line-height: 1; cursor: pointer; width: 44px; height: 44px; flex: 0 0 44px; padding: 0; margin: -8px -8px 0 0; }
-#official-player iframe { display: block; width: 100%; border: 0; }
 #official-player audio { display: block; width: 100%; }
-#official-player .bandcamp { height: 42px; }
 #official-source { display: inline-block; margin-top: 14px; font-size: 12px; }
 @media (max-width: 480px) { main { padding: 28px 19px 60px; } h1 { margin-top: 30px; } .track { gap: 9px; } .track-kind { font-size: 10px; } .recording { padding: 13px; } }

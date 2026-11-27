@@ -1,5 +1,5 @@
 import { createUniverse } from './scene/renderer.js?v=reverie-8';
-import { createSoundtrack } from './audio/player.js?v=reverie-8';
+import { createSoundtrack } from './audio/player.js?v=reverie-9';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');
