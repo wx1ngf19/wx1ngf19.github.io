@@ -1,4 +1,4 @@
-import { createUniverse } from './scene.js?v=reverie-5';
+import { createUniverse } from './scene.js?v=reverie-6';
 import { createSoundtrack } from './music.js?v=reverie-5';
 
 const root = document.documentElement;

@@ -1,4 +1,4 @@
-import { drawCamp } from './camp.js?v=reverie-5';
+import { drawCamp } from './camp.js?v=reverie-6';
 import { drawBirds } from './fauna.js?v=reverie-5';
 import { drawRain } from './atmosphere.js?v=reverie-5';
 import { fragmentSource } from './sky.js?v=reverie-5';

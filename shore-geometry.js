@@ -1,13 +1,12 @@
-let cached;
+// One composition, fitted uniformly to the viewport from its bottom-left corner.
+const COMPOSITION_WIDTH = 1440;
+const COMPOSITION_HEIGHT = 1000;
 
-export function shoreGeometry(width, height) {
-  if (cached?.width === width && cached?.height === height) return cached;
-  const compact = width < 1000 && width / height < 1.65;
+function composeShore() {
+  const width = COMPOSITION_WIDTH, height = COMPOSITION_HEIGHT;
   const outline = [[0, .820], [.035, .808], [.070, .818], [.110, .812], [.155, .821],
     [.200, .815], [.245, .824], [.285, .836], [.325, .856],
-    ...(compact ? [[.365, .842], [.405, .850], [.450, .863], [.490, .876], [.530, .895],
-      [.570, .919], [.610, .947], [.650, .975], [.680, 1]]
-      : [[.355, .886], [.390, .914], [.425, .936], [.465, .960], [.505, .983], [.535, 1]])];
+    [.355, .886], [.390, .914], [.425, .936], [.465, .960], [.505, .983], [.535, 1]];
   const points = outline.map(([x, y]) => [x * width, y * height]);
   const groundAt = x => {
     const position = Math.max(0, x);
@@ -19,7 +18,7 @@ export function shoreGeometry(width, height) {
     return height;
   };
   const fire = {
-    x: width * (compact ? .17 : .245), y: height * (compact ? .944 : .934),
+    x: width * .245, y: height * .934,
     size: Math.max(14, Math.min(29, width * .045, height * .033)),
   };
   const rows = [
@@ -37,6 +36,33 @@ export function shoreGeometry(width, height) {
     return { x, base: groundAt(x) + height * (distant ? .013 : .034) + index % 3 * 2,
       height: treeHeight, phase, distant };
   }).sort((a, b) => a.base - b.base);
-  cached = { width, height, compact, points, groundAt, fire, trees };
+  return { width, height, points, groundAt, fire, trees };
+}
+
+export const shoreComposition = composeShore();
+
+export function foregroundFrame(width, height) {
+  const scale = Math.max(0, Math.min(width / COMPOSITION_WIDTH, height / COMPOSITION_HEIGHT));
+  return { x: 0, y: height - COMPOSITION_HEIGHT * scale, scale };
+}
+
+let cached;
+
+// Screen-space geometry is also available to placement and contact checks.
+export function shoreGeometry(width, height) {
+  if (cached?.width === width && cached?.height === height) return cached;
+  const frame = foregroundFrame(width, height);
+  const point = (x, y) => [frame.x + x * frame.scale, frame.y + y * frame.scale];
+  const [fireX, fireY] = point(shoreComposition.fire.x, shoreComposition.fire.y);
+  cached = {
+    width, height, frame,
+    points: shoreComposition.points.map(([x, y]) => point(x, y)),
+    groundAt: x => frame.scale > 0
+      ? frame.y + shoreComposition.groundAt((x - frame.x) / frame.scale) * frame.scale : height,
+    fire: { x: fireX, y: fireY, size: shoreComposition.fire.size * frame.scale },
+    trees: shoreComposition.trees.map(tree => ({ ...tree,
+      x: frame.x + tree.x * frame.scale, base: frame.y + tree.base * frame.scale,
+      height: tree.height * frame.scale })),
+  };
   return cached;
 }

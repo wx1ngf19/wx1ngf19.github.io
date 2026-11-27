@@ -1,5 +1,5 @@
 import { cabinGeometry as house, cabinShadowVertices, entryGeometry } from './cabin-geometry.js?v=reverie-5';
-import { shoreGeometry } from './shore-geometry.js?v=reverie-5';
+import { shoreComposition, foregroundFrame } from './shore-geometry.js?v=reverie-6';
 import { groundLights, lightAt, projectShadow, shadowHull } from './ground-lighting.js?v=reverie-5';
 
 const TAU = Math.PI * 2;
@@ -99,22 +99,34 @@ function pine(ctx, x, base, height, phase, time, world, distant = false) {
   }
 }
 
+function composeCabin() {
+  const { width, height, groundAt } = shoreComposition;
+  const cabinWidth = Math.min(210, Math.max(98, width * .145), height * .44, width * .31);
+  const scale = cabinWidth / 100;
+  const x = width * .105;
+  // The receding foundation follows the same perspective as the roof and walls.
+  let y = height * .916;
+  for (const [px, py] of house.foundation) y = Math.max(y, groundAt(x + px * scale) - py * scale + 12);
+  return { width: cabinWidth, scale, x, y };
+}
+
+const cabinComposition = composeCabin();
 let lastCabinLayout;
 export function cabinLayout(width, height) {
   if (lastCabinLayout?.viewportWidth === width && lastCabinLayout?.viewportHeight === height) return lastCabinLayout;
-  const { compact, groundAt } = shoreGeometry(width, height);
-  const cabinWidth = Math.min(210, Math.max(98, width * .145), height * .44, width * .31);
-  const scale = cabinWidth / 100;
-  const x = width * (compact ? .40 : .105);
-  // The receding foundation follows the same perspective as the roof and walls.
-  let y = height * (compact ? .935 : .916);
-  for (const [px, py] of house.foundation) y = Math.max(y, groundAt(x + px * scale) - py * scale + 12);
-  lastCabinLayout = { viewportWidth: width, viewportHeight: height, width: cabinWidth, scale, x, y };
+  const frame = foregroundFrame(width, height);
+  lastCabinLayout = {
+    viewportWidth: width, viewportHeight: height,
+    width: cabinComposition.width * frame.scale,
+    scale: cabinComposition.scale * frame.scale,
+    x: frame.x + cabinComposition.x * frame.scale,
+    y: frame.y + cabinComposition.y * frame.scale,
+  };
   return lastCabinLayout;
 }
 
-function shore(ctx, width, height, x, y, size, flicker, world) {
-  const { points } = shoreGeometry(width, height);
+function shore(ctx, terrain, x, y, size, flicker, world) {
+  const { width, height, points, groundAt } = terrain;
   const earth = ctx.createLinearGradient(0, height * .80, 0, height);
   earth.addColorStop(0, material([11, 21, 25], [83, 99, 73], world, .5));
   earth.addColorStop(.55, material([7, 15, 20], [59, 71, 59], world, .35));
@@ -128,7 +140,6 @@ function shore(ctx, width, height, x, y, size, flicker, world) {
   glow(ctx, x, y + size * .2, size * 5.5, [[0, `rgba(214, 130, 58, ${.18 * flicker})`], [.45, 'rgba(161, 98, 45, .045)'], [1, 'rgba(161, 98, 45, 0)']], .38);
   ctx.restore();
   // Low-contrast grass breaks up the clearing without a detached platform shape.
-  const { groundAt } = shoreGeometry(width, height);
   ctx.strokeStyle = material([17, 28, 27], [88, 105, 69], world, .35);
   ctx.lineWidth = .7;
   ctx.globalAlpha *= .32;
@@ -156,7 +167,7 @@ function shore(ctx, width, height, x, y, size, flicker, world) {
   ctx.stroke();
 }
 
-function drawGroundShadows(ctx, terrain, layout, lights, time, wind) {
+function drawGroundShadows(ctx, terrain, layout, lights, time, wind, viewportWidth) {
   const casters = terrain.trees.map(tree => ({ x: tree.x, y: tree.base,
     vertices: [[0, 0], [-.18, .17], [-.11, .45], [-.055, .73], [0, 1],
       [.055, .73], [.11, .45], [.18, .17]].map(([x, h]) =>
@@ -177,7 +188,7 @@ function drawGroundShadows(ctx, terrain, layout, lights, time, wind) {
     const falloff = light.kind === 'fire'
       ? clamp(1 - Math.hypot(caster.x - light.x, caster.y - light.y) / light.radius) ** 2 : 1;
     if (light.alpha * falloff < .002) continue;
-    const source = lightAt(light, caster.x, terrain.width);
+    const source = lightAt(light, caster.x, viewportWidth);
     const points = shadowHull(caster.vertices.map(vertex => projectShadow(vertex, source)));
     const tip = points.reduce((furthest, p) => Math.hypot(p[0] - caster.x, p[1] - caster.y)
       > Math.hypot(furthest[0] - caster.x, furthest[1] - caster.y) ? p : furthest, [caster.x, caster.y + 1]);
@@ -197,8 +208,7 @@ function entryStone(ctx, stone, world) {
   polygon(ctx, stone.top, material([29, 39, 35], [124, 132, 113], world, .3));
 }
 
-function cabin(ctx, width, height, world) {
-  const { scale, x, y } = cabinLayout(width, height);
+function cabin(ctx, { scale, x, y }, world) {
   const light = world.houseLight;
   ctx.save();
   ctx.translate(x, y);
@@ -391,12 +401,15 @@ function fire(ctx, x, y, size, time, flicker, world) {
 export function drawCamp(context, { width, height, time = 0, world = {} }) {
   if (!context || width <= 0 || height <= 0) return;
   const ctx = context;
-  const terrain = shoreGeometry(width, height);
+  const frame = foregroundFrame(width, height);
+  const terrain = shoreComposition;
   const { x, y, size } = terrain.fire;
-  const layout = cabinLayout(width, height);
+  const layout = cabinComposition;
   const flicker = .94 + Math.sin(time * 5.4) * .055 + Math.sin(time * 8.7) * .035;
   const weather = conditions(world);
   ctx.save();
+  ctx.translate(frame.x, frame.y);
+  ctx.scale(frame.scale, frame.scale);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.save();
@@ -404,14 +417,15 @@ export function drawCamp(context, { width, height, time = 0, world = {} }) {
   glow(ctx, x, y - size * .4, size * 6.8, [[0, `rgba(231, 133, 54, ${.13 * flicker})`], [.35, 'rgba(186, 101, 37, .028)'], [1, 'rgba(186, 101, 37, 0)']]);
   ctx.restore();
 
-  shore(ctx, width, height, x, y, size, flicker, weather);
-  drawGroundShadows(ctx, terrain, layout, groundLights({ ...world, fire: weather.fire }, terrain.fire, flicker), time, weather.wind);
+  shore(ctx, terrain, x, y, size, flicker, weather);
+  // Celestial positions remain relative to the actual visible sky after fitting.
+  drawGroundShadows(ctx, terrain, layout, groundLights({ ...world, fire: weather.fire }, terrain.fire, flicker), time, weather.wind, width / frame.scale);
   for (const tree of terrain.trees) {
     ctx.fillStyle = `rgba(2, 11, 14, ${tree.distant ? .12 : .20})`;
     ctx.beginPath(); ctx.ellipse(tree.x, tree.base + .7, tree.height * .035, tree.height * .009, 0, 0, TAU); ctx.fill();
     pine(ctx, tree.x, tree.base, tree.height, tree.phase, time, weather, tree.distant);
   }
-  cabin(ctx, width, height, weather);
+  cabin(ctx, layout, weather);
   fire(ctx, x, y, size, time, flicker, weather);
   ctx.restore();
 }

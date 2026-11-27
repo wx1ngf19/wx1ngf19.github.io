@@ -26,7 +26,7 @@ a small information link beside the emblem opens the current track’s credits.
 - [fauna.js](fauna.js): occasional bird flocks tied to the world clock.
 - [camp.js](camp.js): shoreline, trees, house and campfire.
 - [cabin-geometry.js](cabin-geometry.js): shared wall, roof, foundation and chimney geometry.
-- [shore-geometry.js](shore-geometry.js): the shore outline, fourteen trees and camp placement.
+- [shore-geometry.js](shore-geometry.js): the shared foreground composition and viewport fitting.
 - [ground-lighting.js](ground-lighting.js): sun, moon and fire shadow projection onto the shore.
 - [music.js](music.js): playback, shuffled queues and dawn/dusk fades.
 - [assets/audio/library.js](assets/audio/library.js): twelve daytime and twelve nighttime tracks.
@@ -66,6 +66,8 @@ same depth projection as the foundation. Contact shading follows the foundation 
 cast shadows respond to sun and moon position, cloud and fog cover, and nearby
 firelight. Low celestial lights cast longer shadows. Shadows are clipped to the
 land, with bounded fire projections for the finite illustration.
+The entire foreground scales uniformly from the bottom-left corner, preserving
+the shoreline, trees, cabin, fire and their relative positions on narrow screens.
 
 Rare appearances depend on
 light and weather: rain and distant cloud lightning need humid cloud cover;
