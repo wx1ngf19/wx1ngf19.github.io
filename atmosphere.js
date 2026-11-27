@@ -1,4 +1,4 @@
-import { SEA_LEVEL } from './world.js?v=reverie-3';
+import { SEA_LEVEL } from './world.js?v=reverie-4';
 
 // Upper-atmosphere light is drawn before the lower clouds, which obscure it.
 // Green oxygen curtains, a violet lower fringe and a restrained red upper glow.

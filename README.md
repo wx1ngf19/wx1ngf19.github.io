@@ -25,6 +25,8 @@ a small information link beside the emblem opens the current track’s credits.
 - [fauna.js](fauna.js): occasional bird flocks tied to the world clock.
 - [camp.js](camp.js): shoreline, trees, house and campfire.
 - [cabin-geometry.js](cabin-geometry.js): shared wall, roof, foundation and chimney geometry.
+- [shore-geometry.js](shore-geometry.js): the shore outline, fourteen trees and camp placement.
+- [ground-lighting.js](ground-lighting.js): sun, moon and fire shadow projection onto the shore.
 - [music.js](music.js): playback, shuffled queues and dawn/dusk fades.
 - [assets/audio/library.js](assets/audio/library.js): twelve daytime and twelve nighttime tracks.
 - [assets/audio/credits.html](assets/audio/credits.html): track attributions and license links.
@@ -38,6 +40,8 @@ house lighting, bird visits and celestial events share that clock. Music queues
 are shuffled separately for each visit and audio loads on demand after a play request.
 The day and night libraries contain 24 complete instrumental recordings by
 24 different creators, with a focus on slow piano, acoustic and ambient music.
+The Japanese selections include quiet piano originals by PeriTune and OtoLogic;
+these are licensed original compositions rather than commercial anime recordings.
 Music keeps its individual CC0, CC BY or CC BY-NC license; the Chinese pianist
 Shuwen Zhang’s nocturne is licensed for noncommercial use. See the track credits
 for attribution, source links and terms.
@@ -46,6 +50,11 @@ Solar paths and daily conditions evolve continuously. Sparse clouds drift and
 reshape, with their density, softness and brightness following the weather.
 The cabin uses a common depth projection; roof edges meet the gable, the chimney
 base follows the roof slope, and every foundation corner remains inside the shore.
+The larger shore provides a clearing around the house and fire. Tree roots and
+the fire ring remain on land. Contact shading follows the foundation edges;
+cast shadows respond to sun and moon position, cloud and fog cover, and nearby
+firelight. Low celestial lights cast longer shadows. Shadows are clipped to the
+land, with bounded fire projections for the finite illustration.
 
 Rare appearances depend on
 light and weather: rain and distant cloud lightning need humid cloud cover;

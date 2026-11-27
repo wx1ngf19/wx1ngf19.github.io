@@ -1,5 +1,5 @@
-import { SEA_LEVEL } from './world.js?v=reverie-3';
-import { atmosphereSource } from './atmosphere.js?v=reverie-3';
+import { SEA_LEVEL } from './world.js?v=reverie-4';
+import { atmosphereSource } from './atmosphere.js?v=reverie-4';
 
 export const fragmentSource = `
 precision highp float;
@@ -147,7 +147,7 @@ void main() {
     color += vec3(0.32, 0.14, 0.055) * uWorld.z * exp(-depth * 4.0) * 0.25;
     if (uPhenomena.z > 0.001) {
       float bloom = noise(water * vec2(0.18, 0.09) + uSkyFlow.zw * 0.3);
-      float livingFoam = (crest * 0.75 + fine * 0.65) * smoothstep(0.32, 0.67, bloom);
+      float livingFoam = (crest * 0.75 + fine * 0.65) * (0.12 + 0.88 * smoothstep(0.32, 0.67, bloom));
       color += vec3(0.015, 0.33, 0.48) * livingFoam * uPhenomena.z * smoothstep(0.012, 0.10, depth);
     }
     float age = uTime - uRipple.z;

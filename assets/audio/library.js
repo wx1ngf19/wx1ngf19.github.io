@@ -298,18 +298,18 @@ export const soundtracks = {
       "attribution": "What Does Anybody Know About Anything by Chris Zabriskie — chriszabriskie.com — CC BY 4.0."
     },
     {
-      "id": "frippertronic-experiment-01",
-      "title": "Frippertronic Experiment 01",
-      "artist": "billdancourtney",
-      "src": "./assets/audio/frippertronic-experiment-01.mp3",
-      "source": "https://freesound.org/people/billdancourtney/sounds/209832/",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://freesound.org/people/billdancourtney/",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": "China-based; American",
-      "bioSource": "https://freesound.org/people/billdancourtney/",
-      "style": "Slow experimental ambient synth with dual tape delay",
-      "attribution": "Frippertronic Experiment 01 by billdancourtney — Freesound — CC0 1.0 Universal."
+      "id": "shizima3-piano",
+      "title": "Shizima3 (Piano Solo)",
+      "artist": "PeriTune / むつき醒 (Sei Mutsuki)",
+      "src": "./assets/audio/shizima3-piano.mp3",
+      "source": "https://peritune.com/blog/2018/06/17/shizima3/",
+      "license": "CC BY 4.0",
+      "artistUrl": "https://peritune.com/about/",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "country": "Japan",
+      "bioSource": "https://peritune.itch.io/",
+      "style": "Quiet, gentle Japanese-style solo piano; 82 BPM",
+      "attribution": "Shizima3 (Piano Solo) by PeriTune / むつき醒 (Sei Mutsuki) — https://peritune.com — CC BY 4.0."
     },
     {
       "id": "contemplation",
@@ -326,18 +326,18 @@ export const soundtracks = {
       "attribution": "Contemplation by Joth — CC0 1.0 Universal."
     },
     {
-      "id": "moil",
-      "title": "Moil",
-      "artist": "Ruskerdax",
-      "src": "./assets/audio/moil.mp3",
-      "source": "https://opengameart.org/content/moil",
-      "license": "CC0 1.0 Universal",
-      "artistUrl": "https://opengameart.org/users/ruskerdax",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "country": null,
-      "bioSource": null,
-      "style": "Slow, quiet dark jazz with Rhodes, saxophone and bass",
-      "attribution": "Moil by Ruskerdax — CC0 1.0 Universal."
+      "id": "anata-wo-shiritakute",
+      "title": "あなたを知りたくて (Anata wo Shiritakute)",
+      "artist": "OtoLogic",
+      "src": "./assets/audio/anata-wo-shiritakute.mp3",
+      "source": "https://otologic.jp/free/bgm/pop-music-piano01.html",
+      "license": "CC BY 4.0",
+      "artistUrl": "https://otologic.jp/",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "country": "Japan",
+      "bioSource": "https://otologic.jp/about/about_us.html",
+      "style": "Gentle lyrical piano ballad with light harp doubling; approximately 70 BPM; no drums",
+      "attribution": "あなたを知りたくて (Anata wo Shiritakute) — music by OtoLogic (https://otologic.jp), licensed under CC BY 4.0."
     }
   ]
 };

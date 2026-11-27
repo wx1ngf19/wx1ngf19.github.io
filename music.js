@@ -1,5 +1,5 @@
-import { soundtracks } from './assets/audio/library.js?v=reverie-3';
-import { sampleWorld } from './world.js?v=reverie-3';
+import { soundtracks } from './assets/audio/library.js?v=reverie-4';
+import { sampleWorld } from './world.js?v=reverie-4';
 
 const LISTENING_VOLUME = .42;
 

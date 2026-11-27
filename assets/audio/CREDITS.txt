@@ -289,20 +289,22 @@ Style: Slow minimalist piano and ambient instrumental
 Local file: ./assets/audio/what-does-anybody-know.mp3
 License evidence: https://chriszabriskie.com/use/
 
-[frippertronic-experiment-01] Frippertronic Experiment 01
-Artist: billdancourtney
-Artist website: https://freesound.org/people/billdancourtney/
-Source: https://freesound.org/people/billdancourtney/sounds/209832/
-Original recording file: https://cdn.freesound.org/previews/209/209832_3860945-hq.mp3
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Frippertronic Experiment 01 by billdancourtney — Freesound — CC0 1.0 Universal.
+[shizima3-piano] Shizima3 (Piano Solo)
+Artist: PeriTune / むつき醒 (Sei Mutsuki)
+Artist website: https://peritune.com/about/
+Source: https://peritune.com/blog/2018/06/17/shizima3/
+Original recording file: https://peritune.com/music/PerituneMaterial_Shizima3_Piano.mp3
+License: CC BY 4.0
+License URL: https://creativecommons.org/licenses/by/4.0/
+Attribution: Shizima3 (Piano Solo) by PeriTune / むつき醒 (Sei Mutsuki) — https://peritune.com — CC BY 4.0.
 Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow experimental ambient synth with dual tape delay
-Local file: ./assets/audio/frippertronic-experiment-01.mp3
-Location: China-based; American
-Biography source: https://freesound.org/people/billdancourtney/
-Location evidence: The creator’s own profile explicitly says “American living in Southwest China”; this identifies residence, not Chinese nationality.
+Style: Quiet, gentle Japanese-style solo piano; 82 BPM
+Local file: ./assets/audio/shizima3-piano.mp3
+License evidence: https://peritune.com/about/
+Location: Japan
+Biography source: https://peritune.itch.io/
+Location evidence: The creator’s own itch.io profile explicitly identifies them as a Japanese music creator; the linked official website identifies PeriTune as むつき醒 (Sei Mutsuki).
+Use condition: First published June 17, 2018. The creator’s current terms explicitly retain CC BY 4.0 for works published before March 2026.
 
 [contemplation] Contemplation
 Artist: Joth
@@ -316,14 +318,21 @@ Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cut
 Style: Quiet, thoughtful ambient soundscape
 Local file: ./assets/audio/contemplation.mp3
 
-[moil] Moil
-Artist: Ruskerdax
-Artist website: https://opengameart.org/users/ruskerdax
-Source: https://opengameart.org/content/moil
-Original recording file: https://opengameart.org/sites/default/files/ruskerdax_-_moil.mp3
-License: CC0 1.0 Universal
-License URL: https://creativecommons.org/publicdomain/zero/1.0/
-Attribution: Moil by Ruskerdax — CC0 1.0 Universal.
+[anata-wo-shiritakute] あなたを知りたくて (Anata wo Shiritakute)
+Artist: OtoLogic
+Artist website: https://otologic.jp/
+Source: https://otologic.jp/free/bgm/pop-music-piano01.html
+Original recording file: https://otologic.jp/sounds/bgm/mp3-zip/anata%20wo%20siritakute-mp3.zip
+Archive entry (complete recording, not the loop): anata wo siritakute/anata wo siritakute.mp3
+License: CC BY 4.0
+License URL: https://creativecommons.org/licenses/by/4.0/
+Attribution: あなたを知りたくて (Anata wo Shiritakute) — music by OtoLogic (https://otologic.jp), licensed under CC BY 4.0.
 Changes: Complete recording transcoded to MP3, 128 kbps, 44.1 kHz stereo. No cuts, repetition, or speed changes.
-Style: Slow, quiet dark jazz with Rhodes, saxophone and bass
-Local file: ./assets/audio/moil.mp3
+Style: Gentle lyrical piano ballad with light harp doubling; approximately 70 BPM; no drums
+Local file: ./assets/audio/anata-wo-shiritakute.mp3
+License evidence: https://otologic.jp/free/license.html
+Location: Japan
+Biography source: https://otologic.jp/about/about_us.html
+Location evidence: The creator’s own biography identifies the operator as Honda, born in Niigata and currently living in Niigata City, Japan.
+Redistribution evidence: https://otologic.jp/free/faq.html
+Use condition: OtoLogic’s official FAQ explicitly permits redistribution of the recordings when the required attribution is preserved. The complete main-melody version is used, not the alternate narration accompaniment.

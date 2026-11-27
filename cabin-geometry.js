@@ -49,3 +49,13 @@ export const cabinGeometry = {
   chimneyCap: [capLeft, capRight, capBackRight, capBackLeft],
   chimneyCapEdge: [capLeft, capRight, add(capRight, [0, 2]), add(capLeft, [0, 2])],
 };
+
+// Screen x, ground-plane y, height above that plane, for cast-shadow projection.
+export const cabinShadowVertices = [
+  [-47, 5, 0], [18, 5, 0], [49, -6.76, 0], [-16, -6.76, 0],
+  ...[[eaveLeft, 0], [ridgeFront, 0], [eaveRight, 0],
+    [eaveLeftBack, -11], [ridgeBack, -11], [eaveRightBack, -11],
+    [capLeft, -11 * distance], [capRight, -11 * distance],
+    [capBackLeft, -11 * (distance + chimneyDepth)], [capBackRight, -11 * (distance + chimneyDepth)]]
+    .map(([point, ground]) => [point[0], ground, ground - point[1]]),
+];
