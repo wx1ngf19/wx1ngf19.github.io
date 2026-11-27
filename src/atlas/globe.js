@@ -64,10 +64,14 @@ export function createGlobe(canvas, world, { nameFor, onSelect, tooltip }) {
     configure();
     context.clearRect(0, 0, width, height);
     const r = radius * zoom;
+    const scale = clamp(Math.pow(r / 260, .8), .34, 1.1);
+    const ink = clamp(r / 240, .58, 1);
+    const landScale = clamp(Math.sqrt(r / 260), .45, 1.1);
+    const landInk = clamp(.6 + landScale * .4, .7, 1);
     for (let index = 0; index < stars.length; index += 1) {
       const star = stars[index];
       const a = .12 + (reduced.matches ? .06 : (Math.sin(now * .0004 + index * 2.3) + 1) * .06);
-      circle(star.x * width, star.y * height, star.size, `rgba(170,204,201,${a})`);
+      circle(star.x * width, star.y * height, star.size * (.6 + scale * .4), `rgba(170,204,201,${a * (.65 + ink * .35)})`);
     }
     const glow = context.createRadialGradient(...center, r * .87, ...center, r * 1.2);
     glow.addColorStop(0, '#a3d7c91a');
@@ -82,7 +86,7 @@ export function createGlobe(canvas, world, { nameFor, onSelect, tooltip }) {
       context.beginPath();
       context.ellipse(0, 0, r * 1.18, r * flatten, 0, 0, TAU);
       context.strokeStyle = `rgba(192,207,182,${alpha})`;
-      context.lineWidth = .65;
+      context.lineWidth = .65 * clamp(scale, .6, 1);
       context.stroke();
       context.restore();
     }
@@ -115,9 +119,9 @@ export function createGlobe(canvas, world, { nameFor, onSelect, tooltip }) {
       const depth = sample.xyz.reduce((sum, value, index) => sum + value * normal[index], 0);
       if (depth < 0) continue;
       const point = projection(sample.point);
-      context.globalAlpha = .16 + Math.pow(depth, .55) * .64;
+      context.globalAlpha = (.16 + Math.pow(depth, .55) * .64) * landInk;
       context.beginPath();
-      context.arc(...point, sample.size * (.6 + depth * .5), 0, TAU);
+      context.arc(...point, sample.size * (.6 + depth * .5) * landScale, 0, TAU);
       context.fill();
     }
     context.globalAlpha = 1;
@@ -126,36 +130,54 @@ export function createGlobe(canvas, world, { nameFor, onSelect, tooltip }) {
     context.strokeStyle = '#a5d2ce26';
     context.lineWidth = .8;
     context.stroke();
+    const markers = [];
     for (const [code, amount] of counts) {
       const place = world.places[code];
-      if (!place || !amount || d3.geoDistance(place.point, front) > Math.PI / 2 - .025) continue;
+      if (!place || !amount) continue;
+      const distance = d3.geoDistance(place.point, front);
+      if (distance > Math.PI / 2 - .025) continue;
       const point = projection(place.point);
       if (!point) continue;
       const intensity = Math.log1p(amount) / Math.log1p(maximum);
-      const size = 1.8 + intensity * 2.5;
-      const pulse = reduced.matches ? 1 : 1 + Math.sin(now * .0014 + place.point[0]) * .12;
-      const halo = context.createRadialGradient(...point, 0, ...point, (13 + intensity * 10) * pulse);
-      halo.addColorStop(0, '#e4ce9c66');
-      halo.addColorStop(.4, '#c8bb7e20');
+      markers.push({ code, point, intensity, phase: place.point[0], edge: clamp((Math.PI / 2 - distance) / .2, .2, 1) });
+    }
+    // Measure nearby projected lights so dense coastlines retain their detail.
+    const reach = 24 * scale;
+    for (const marker of markers) {
+      const { code, point, intensity, phase, edge } = marker;
+      let crowding = 0;
+      for (const other of markers) {
+        if (other === marker) continue;
+        const distance = Math.hypot(point[0] - other.point[0], point[1] - other.point[1]);
+        if (distance < reach) crowding += (1 - distance / reach) ** 2;
+      }
+      const quiet = clamp(1 / Math.sqrt(1 + crowding * 1.6), .3, 1);
+      const emphasis = code === selected ? Math.max(.8, quiet) : quiet;
+      const size = Math.max(.9, (1.6 + intensity * 2) * scale * (.78 + quiet * .22));
+      const pulse = reduced.matches ? 1 : 1 + Math.sin(now * .0014 + phase) * .07;
+      const haloRadius = (9 + intensity * 9) * scale * pulse;
+      const halo = context.createRadialGradient(...point, 0, ...point, haloRadius);
+      halo.addColorStop(0, `rgba(228,206,156,${.24 * ink * emphasis * edge})`);
+      halo.addColorStop(.4, `rgba(200,187,126,${.07 * ink * emphasis * edge})`);
       halo.addColorStop(1, '#c8bb7e00');
-      circle(...point, (13 + intensity * 10) * pulse, halo);
-      circle(...point, size, '#e8d8ad');
-      circle(point[0] - size * .2, point[1] - size * .2, size * .32, '#fff5da');
+      circle(...point, haloRadius, halo);
+      circle(...point, size, `rgba(232,216,173,${(.6 + ink * .3) * (.8 + emphasis * .2) * edge})`);
+      circle(point[0] - size * .2, point[1] - size * .2, size * .28, `rgba(255,240,201,${.6 * ink * edge})`);
       if (code === selected) {
         context.beginPath();
-        context.arc(...point, size + 7 + Math.sin(now * .001) * (reduced.matches ? 0 : 1.5), 0, TAU);
-        context.strokeStyle = '#e3cc9470';
-        context.lineWidth = .8;
+        context.arc(...point, size + scale * (5 + Math.sin(now * .001) * (reduced.matches ? 0 : .7)), 0, TAU);
+        context.strokeStyle = `rgba(227,204,148,${.45 * ink})`;
+        context.lineWidth = Math.max(.45, .7 * scale);
         context.stroke();
       }
     }
     const orbitalAngle = reduced.matches ? .3 : now * .000035;
     const ox = Math.cos(orbitalAngle) * r * 1.18, oy = Math.sin(orbitalAngle) * r * .32;
     const beacon = [center[0] + ox * Math.cos(-.4) - oy * Math.sin(-.4), center[1] + ox * Math.sin(-.4) + oy * Math.cos(-.4)];
-    const halo = context.createRadialGradient(...beacon, 0, ...beacon, 10);
-    halo.addColorStop(0, '#ead9af88'); halo.addColorStop(1, '#ead9af00');
-    circle(...beacon, 10, halo);
-    circle(...beacon, 1.8, '#e2d2ac');
+    const halo = context.createRadialGradient(...beacon, 0, ...beacon, 7 * scale);
+    halo.addColorStop(0, `rgba(234,217,175,${.28 * ink})`); halo.addColorStop(1, '#ead9af00');
+    circle(...beacon, 7 * scale, halo);
+    circle(...beacon, Math.max(.7, 1.5 * scale), `rgba(226,210,172,${.55 + ink * .25})`);
   }
 
   function animate(now) {

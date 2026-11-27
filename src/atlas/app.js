@@ -1,5 +1,5 @@
 import { API_ORIGIN } from '../analytics/config.js?v=atlas-1';
-import { createGlobe } from './globe.js?v=atlas-2';
+import { createGlobe } from './globe.js?v=atlas-4';
 
 const $ = selector => document.querySelector(selector);
 const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'], { type: 'region' }) : null;

@@ -1,7 +1,7 @@
 :root { color-scheme: dark; background: #071218; color: #d9dfd9; font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --ink: #e7e2d3; --muted: #829c9b; --gold: #d9bb86; --line: #accac818; }
 * { box-sizing: border-box; }
 html { height: 100%; overflow: hidden; }
-body { --atlas-gutter: clamp(24px, 4.2vw, 74px); margin: 0; min-width: 300px; height: 100%; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; background: radial-gradient(ellipse at 38% 45%, #15313a55, transparent 48%), #071218; }
+body { --atlas-gutter: clamp(24px, 4.2vw, 74px); --atlas-text: clamp(12px, min(calc(2.2vw + 5px), calc(1.8vh + 3px)), 14px); margin: 0; min-width: 300px; height: 100%; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; background: radial-gradient(ellipse at 38% 45%, #15313a55, transparent 48%), #071218; }
 button, a, summary { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
@@ -14,7 +14,7 @@ button:focus-visible, a:focus-visible, canvas:focus-visible, summary:focus-visib
 .home-link img { opacity: .8; }
 .brand-divider { display: inline-block; padding: 0 14px; opacity: .35; }
 .periods { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 40px; }
-.periods button { border: 0; border-radius: 30px; background: transparent; color: #91a5a4; padding: 6px 17px; min-height: 36px; font-size: 14px; transition: background .25s, color .25s; }
+.periods button { border: 0; border-radius: 30px; background: transparent; color: #91a5a4; padding: 6px 17px; min-height: 36px; font-size: var(--atlas-text); transition: background .25s, color .25s; }
 .periods button[aria-pressed="true"] { background: #d4dfcf12; color: #e1d8be; }
 .periods button:hover { color: #f4e9cc; }
 .atlas-layout { display: grid; grid-template-columns: minmax(0, 1fr) 246px; gap: clamp(22px, 4vw, 70px); min-height: 0; padding: 0 var(--atlas-gutter); }
@@ -28,9 +28,9 @@ button:focus-visible, a:focus-visible, canvas:focus-visible, summary:focus-visib
 .atlas-ledger { display: flex; flex-direction: column; align-self: center; min-height: 0; max-height: 100%; width: 100%; padding: 14px 0; }
 .summary { display: flex; flex: 0 0 auto; gap: clamp(20px, 2.3vw, 32px); padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .summary > div { display: flex; flex-direction: column; gap: 5px; }
-.summary strong { font: 400 46px/1.15 Georgia, serif; font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: -.03em; }
+.summary strong { font: 400 clamp(30px, calc(5vh + 4px), 46px)/1.15 Georgia, serif; font-variant-numeric: tabular-nums; color: var(--ink); letter-spacing: -.03em; }
 .summary > div + div strong { color: #a8c8c1; }
-.summary span { font-size: 14px; color: var(--muted); letter-spacing: .04em; }
+.summary span { font-size: var(--atlas-text); color: var(--muted); letter-spacing: .04em; }
 .connection-row { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 12px; }
 .connection-state { color: #789794; font-size: 12px; letter-spacing: .04em; }
 .connection-state::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; margin-right: 8px; background: #a0c2ac; box-shadow: 0 0 8px #a0c2ac44; vertical-align: middle; }
@@ -42,18 +42,18 @@ button:focus-visible, a:focus-visible, canvas:focus-visible, summary:focus-visib
 .retry { flex: 0 0 auto; align-self: flex-start; color: #dcc9a5; font-size: 12px; border: 1px solid #b6c5b53a; border-radius: 20px; background: transparent; padding: 5px 14px; margin: -4px 0 8px; }
 .origins { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 .section-label { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; margin: 0 0 8px; }
-.section-label h2 { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 400; letter-spacing: .04em; color: #c0d1c8; }
+.section-label h2 { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--atlas-text); font-weight: 400; letter-spacing: .04em; color: #c0d1c8; }
 .section-label > span { color: #748e91; font-size: 12px; }
 ol { list-style: none; margin: 0; padding: 0; }
 .country-list, #region-list { flex: 1 1 auto; min-height: 0; max-height: 228px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #315354 transparent; padding: 0 4px; scroll-padding-block: 4px; }
-.country-list button { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; min-height: 36px; background: transparent; border: 0; padding: 7px 4px; text-align: left; font-size: 14px; border-radius: 4px; }
+.country-list button { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; min-height: 36px; background: transparent; border: 0; padding: clamp(5px, 1vh, 7px) 4px; text-align: left; font-size: var(--atlas-text); border-radius: 4px; }
 .country-list button:hover, .country-list button[aria-pressed="true"] { background: #a0cab711; }
 .country-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #b8cbc2; }
-.country-views { flex: 0 0 auto; font: 400 14px/1.3 Georgia, serif; color: #c8bf9f; font-variant-numeric: tabular-nums; }
+.country-views { flex: 0 0 auto; font: 400 var(--atlas-text)/1.3 Georgia, serif; color: #c8bf9f; font-variant-numeric: tabular-nums; }
 .country-list .empty-note { padding: 14px 0; font: italic 16px/1.6 Georgia, serif; color: #8aa2a4; }
 .region-detail { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 #clear-country { border: 0; background: transparent; color: #8fa8a5; font-size: 22px; padding: 0; min-width: 28px; min-height: 28px; line-height: 1; }
-#region-list li { display: flex; justify-content: space-between; gap: 18px; min-height: 36px; padding: 7px 4px; color: #8fa7a5; font-size: 14px; }
+#region-list li { display: flex; justify-content: space-between; gap: 18px; min-height: 36px; padding: clamp(5px, 1vh, 7px) 4px; color: #8fa7a5; font-size: var(--atlas-text); }
 .region-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .region-views { flex: 0 0 auto; color: #d0c19d; font-variant-numeric: tabular-nums; }
 .timeline-wrap { flex: 0 0 auto; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 14px; }
@@ -68,7 +68,7 @@ ol { list-style: none; margin: 0; padding: 0; }
 .atlas-note p:last-child { margin: 0; }
 .atlas-note a { text-underline-offset: 3px; color: #c1c7b2; }
 [data-embedded="true"] .atlas-header { padding-right: 104px; }
-@media (max-width: 950px) { .atlas-layout { grid-template-columns: minmax(0,1fr) 220px; gap: 20px; } .summary strong { font-size: 40px; } }
+@media (max-width: 950px) { .atlas-layout { grid-template-columns: minmax(0,1fr) 220px; gap: 20px; } .summary strong { font-size: clamp(28px, calc(5vh + 4px), 40px); } }
 @media (max-width: 700px) {
   body { --atlas-gutter: 26px; }
   .atlas-header { padding: max(14px, env(safe-area-inset-top)) 20px 6px; gap: 10px; }
@@ -81,7 +81,7 @@ ol { list-style: none; margin: 0; padding: 0; }
   .map-toolbar { bottom: 2px; font-size: 12px; }
   .atlas-ledger { align-self: stretch; max-width: 400px; margin: 0 auto; padding: 12px 0 0; }
   .summary { gap: 50px; }
-  .summary strong { font-size: 36px; }
+  .summary strong { font-size: clamp(28px, calc(5vh + 2px), 36px); }
   .timeline-wrap { margin-top: 12px; padding-top: 10px; }
   #visit-timeline { height: 32px; }
   .atlas-footer { padding: 8px var(--atlas-gutter) max(16px, env(safe-area-inset-bottom)); }
@@ -93,7 +93,7 @@ ol { list-style: none; margin: 0; padding: 0; }
   .atlas-layout { grid-template-columns: minmax(0, 1fr) 210px; grid-template-rows: minmax(0, 1fr); gap: 20px; }
   .atlas-ledger { align-self: center; padding: 0; }
   .summary { gap: 24px; padding-bottom: 6px; }
-  .summary strong { font-size: 32px; }
+  .summary strong { font-size: clamp(26px, calc(4vh + 8px), 32px); }
   .connection-row { margin: 2px 0 4px; }
   .section-label { margin-bottom: 4px; }
   .timeline-wrap { margin-top: 8px; padding-top: 8px; }
@@ -106,7 +106,7 @@ ol { list-style: none; margin: 0; padding: 0; }
   .atlas-layout { grid-template-rows: minmax(0, .65fr) minmax(0, 1fr); }
   .atlas-ledger { padding-top: 8px; }
   .summary { padding-bottom: 6px; }
-  .summary strong { font-size: 32px; }
+  .summary strong { font-size: clamp(28px, 5vh, 32px); }
   .connection-row { margin: 2px 0 4px; }
   .section-label { margin-bottom: 4px; }
   .timeline-wrap { margin-top: 8px; padding-top: 6px; }
