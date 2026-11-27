@@ -1,8 +1,12 @@
 // A shared fictional world, not a forecast or a simulation of Earth's location.
 // Solar altitude, atmospheric extinction, radiation fog and galactic structure
 // inform the art; time and stellar rotation are deliberately accelerated.
+import { celestialProfile } from './celestial.js?v=reverie-5';
+
 export const WORLD_EPOCH = Date.UTC(2026, 10, 26);
-export const DAY_SECONDS = 36 * 60;
+export const DAY_SECONDS = 18 * 60;
+// Weather and local motion keep their pace when the daylight clock changes.
+const EVOLUTION_SECONDS = 36 * 60;
 export const SEA_LEVEL = .205;
 const TAU = Math.PI * 2;
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -24,7 +28,7 @@ function weatherSignal(seconds, seed, duration = 420) {
 }
 
 function weatherAt(seconds) {
-  const character = weatherSignal(seconds, 75139, DAY_SECONDS * 1.37);
+  const character = weatherSignal(seconds, 75139, EVOLUTION_SECONDS * 1.37);
   const coverage = clamp(.035 + weatherSignal(seconds, 19870921) ** 1.85 * .84 + (character - .5) * .12, .025, .94);
   const humidity = .36 + weatherSignal(seconds, 11997, 570) * .63;
   const rain = smooth(.65, .91, coverage) * smooth(.68, .94, humidity)
@@ -60,11 +64,11 @@ export function sampleWorld(now = Date.now()) {
   const nightIndex = Math.floor(days + .5);
   const lampThreshold = -.11 - random(nightIndex, 61327) * .13;
   const houseLight = (1 - smooth(lampThreshold - .05, lampThreshold + .05, altitude)) * (.78 + weatherSignal(seconds, 98231, 310) * .22);
-  const activity = weatherSignal(seconds, 72817, DAY_SECONDS * .61);
+  const activity = weatherSignal(seconds, 72817, EVOLUTION_SECONDS * .61);
   const aurora = night * smooth(.63, .88, activity) * (1 - coverage * .72) * (1 - fog * .85);
   const nightCloud = smooth(-.28, -.20, altitude) * (1 - smooth(-.12, -.09, altitude))
     * smooth(.55, .82, character) * (1 - coverage * .8);
-  const seaGlow = night * smooth(.58, .84, weatherSignal(seconds, 83917, DAY_SECONDS * 1.31)) * (1 - rain * .8);
+  const seaGlow = night * smooth(.58, .84, weatherSignal(seconds, 83917, EVOLUTION_SECONDS * 1.31)) * (1 - rain * .8);
   const recentRain = Math.max(rain, weatherAt(seconds - 120).rain);
   const rainbow = smooth(.02, .10, altitude) * (1 - smooth(.45, .70, altitude))
     * smooth(.015, .16, recentRain) * (1 - smooth(.50, .84, coverage));
@@ -73,10 +77,12 @@ export function sampleWorld(now = Date.now()) {
   const flashAge = mod(seconds, 31) - 4 - random(stormSlot, 71913) * 21;
   const lightning = storm * smooth(0, .09, flashAge) * (1 - smooth(.09, .85, flashAge));
   const skyPhase = mod(seconds * .018, TAU);
-  const cloudShape = weatherSignal(seconds, 23719, DAY_SECONDS * .63);
+  const cloudShape = weatherSignal(seconds, 23719, EVOLUTION_SECONDS * .63);
   const skyTint = [clamp(mix(.065, .65, daylight) + twilight * .12), clamp(mix(.10, .75, daylight) + twilight * .035), mix(.15, .78, daylight)];
   return {
     seconds, phase, altitude, daylight, night, twilight, coverage, humidity, wind, fog, houseLight,
+    // Night identities change at noon, hidden by daylight, and survive midnight.
+    celestial: celestialProfile(nightIndex),
     fire: (1 - smooth(-.14, .065, altitude)) * (1 - rain * .82),
     rain, aurora, nightCloud, seaGlow, rainbow, lightning,
     skyFlow: [Math.sin(skyPhase), Math.cos(skyPhase)],
@@ -86,10 +92,10 @@ export function sampleWorld(now = Date.now()) {
     galaxySpin: mod(seconds * .0025, TAU),
     // Slow, aperiodic artistic evolution, while individual star identities persist.
     cosmos: [
-      (weatherSignal(seconds, 21371, DAY_SECONDS * 1.7) - .5) * .14,
-      .88 + weatherSignal(seconds, 51719, DAY_SECONDS * 2.3) * .24,
-      (weatherSignal(seconds, 37139, DAY_SECONDS * 1.3) - .5) * .12,
-      weatherSignal(seconds, 91817, DAY_SECONDS * .8),
+      (weatherSignal(seconds, 21371, EVOLUTION_SECONDS * 1.7) - .5) * .14,
+      .88 + weatherSignal(seconds, 51719, EVOLUTION_SECONDS * 2.3) * .24,
+      (weatherSignal(seconds, 37139, EVOLUTION_SECONDS * 1.3) - .5) * .12,
+      weatherSignal(seconds, 91817, EVOLUTION_SECONDS * .8),
     ],
     cloudOffset: [mod(seconds * .0055 + Math.sin(seconds / 170) * .15, 256), Math.sin(seconds / 390) * .18],
     cloudForm: [mix(.62, 1.35, cloudShape), mix(1.65, .78, cloudShape), mix(.10, .22, cloudShape), weatherSignal(seconds, 15831, 270)],

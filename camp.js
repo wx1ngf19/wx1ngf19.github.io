@@ -1,6 +1,6 @@
-import { cabinGeometry as house, cabinShadowVertices } from './cabin-geometry.js?v=reverie-4';
-import { shoreGeometry } from './shore-geometry.js?v=reverie-4';
-import { groundLights, lightAt, projectShadow, shadowHull } from './ground-lighting.js?v=reverie-4';
+import { cabinGeometry as house, cabinShadowVertices, entryGeometry } from './cabin-geometry.js?v=reverie-5';
+import { shoreGeometry } from './shore-geometry.js?v=reverie-5';
+import { groundLights, lightAt, projectShadow, shadowHull } from './ground-lighting.js?v=reverie-5';
 
 const TAU = Math.PI * 2;
 
@@ -191,6 +191,12 @@ function drawGroundShadows(ctx, terrain, layout, lights, time, wind) {
   ctx.restore();
 }
 
+function entryStone(ctx, stone, world) {
+  polygon(ctx, stone.front, material([24, 36, 34], [112, 122, 103], world, .3));
+  polygon(ctx, stone.side, material([17, 30, 30], [78, 94, 83], world, .3));
+  polygon(ctx, stone.top, material([29, 39, 35], [124, 132, 113], world, .3));
+}
+
 function cabin(ctx, width, height, world) {
   const { scale, x, y } = cabinLayout(width, height);
   const light = world.houseLight;
@@ -201,10 +207,10 @@ function cabin(ctx, width, height, world) {
   // Contact follows the foundation's actual edges, rather than a detached oval.
   polygon(ctx, [[-49, 3], [18, 3], [51, -9], [51, -4], [19, 8], [-49, 8]],
     material([5, 13, 16], [46, 59, 43], world, .3));
-  const pathStone = material([17, 27, 27], [92, 100, 80], world, .3);
-  polygon(ctx, [[-9, 8], [10, 7], [13, 10], [-11, 12]], pathStone);
-  polygon(ctx, [[-8, 17], [14, 16], [17, 20], [-9, 22]], pathStone);
-  polygon(ctx, [[-5, 28], [19, 26], [23, 31], [-7, 33]], pathStone);
+  entryStone(ctx, entryGeometry.lower, world);
+  ctx.strokeStyle = 'rgba(2, 9, 12, .26)';
+  ctx.lineWidth = .65;
+  ctx.beginPath(); ctx.moveTo(...entryGeometry.lower.contact[0]); ctx.lineTo(...entryGeometry.lower.contact[1]); ctx.stroke();
   glow(ctx, -3, 5, 48, [[0, `rgba(244, 180, 91, ${.14 * light})`], [.45, `rgba(216, 143, 62, ${.055 * light})`], [1, 'rgba(216, 143, 62, 0)']], .23);
   polygon(ctx, house.foundationTop, material([29, 39, 35], [123, 131, 112], world, .4));
   polygon(ctx, house.foundationFront, material([21, 32, 31], [112, 122, 103], world, .4));
@@ -215,9 +221,12 @@ function cabin(ctx, width, height, world) {
   ctx.strokeStyle = material([13, 24, 25], [63, 79, 69], world, .4);
   ctx.lineWidth = .65;
   ctx.beginPath();
-  ctx.moveTo(-29, 0); ctx.lineTo(-31, 5); ctx.moveTo(-7, 0); ctx.lineTo(-5, 5);
-  ctx.moveTo(14, 0); ctx.lineTo(15, 4); ctx.moveTo(34, -7); ctx.lineTo(34, -1);
-  ctx.moveTo(44, -10.8); ctx.lineTo(44, -4.8); ctx.stroke();
+  for (const joint of [-33, -19, 14]) { ctx.moveTo(joint, 0); ctx.lineTo(joint, 5); }
+  for (const joint of [31, 43]) {
+    const top = -1 - (joint - 18) * 11.76 / 31;
+    ctx.moveTo(joint, top); ctx.lineTo(joint, top + 6);
+  }
+  ctx.stroke();
 
   // A gable, one timber facade and a shaded side wall establish modest volume.
   // Opaque underpainting prevents antialiased shared edges from exposing the sky.
@@ -280,7 +289,7 @@ function cabin(ctx, width, height, world) {
   ctx.moveTo(6, -28); ctx.lineTo(6, -.5); ctx.stroke();
   ctx.fillStyle = material([42, 48, 36], [166, 152, 101], world, .35);
   ctx.beginPath(); ctx.arc(6.2, -13, .9, 0, TAU); ctx.fill();
-  polygon(ctx, [[-9, 1], [12, 1], [16, 4], [-8, 6]], material([24, 36, 34], [121, 128, 105], world, .3));
+  entryStone(ctx, entryGeometry.upper, world);
   // Every artificial-light contribution follows the shared world's houseLight.
   ctx.fillStyle = `rgba(251, 192, 104, ${.48 * light})`;
   ctx.fillRect(-5.5, -.3, 15, .9);

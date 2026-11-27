@@ -19,6 +19,7 @@ a small information link beside the emblem opens the current track’s credits.
 - [index.html](index.html), [styles.css](styles.css): the single-screen canvas and emblem.
 - [app.js](app.js): pointer interaction, keyboard input and motion preferences.
 - [world.js](world.js): the shared clock, solar paths, weather and event conditions.
+- [celestial.js](celestial.js): deterministic nightly star and galaxy compositions.
 - [scene.js](scene.js): rendering, stars, meteors and adaptive sky resolution.
 - [sky.js](sky.js): procedural sky, galaxy, clouds, distant land and water.
 - [atmosphere.js](atmosphere.js): aurora, night-shining clouds, rainbow and rain.
@@ -34,9 +35,10 @@ a small information link beside the emblem opens the current track’s credits.
 
 ## World
 
-A full fictional day lasts 36 real minutes. Its state is calculated from absolute
+A full fictional day lasts 18 real minutes. Its state is calculated from absolute
 UTC time, so closing or refreshing the page does not restart the world. Weather,
-house lighting, bird visits and celestial events share that clock. Music queues
+house lighting, bird visits and celestial events share that clock.
+Weather evolution and local motion keep their independent real-time pace. Music queues
 are shuffled separately for each visit and audio loads on demand after a play request.
 The day and night libraries contain 24 complete instrumental recordings by
 24 different creators, with a focus on slow piano, acoustic and ambient music.
@@ -48,10 +50,19 @@ for attribution, source links and terms.
 
 Solar paths and daily conditions evolve continuously. Sparse clouds drift and
 reshape, with their density, softness and brightness following the weather.
+Each fictional night has its own star population, bright-star proportion, color
+mix and independent twinkle rates. The galactic band changes its orientation,
+width, bends and dust gaps; a small distant galaxy takes a spiral, barred spiral,
+elliptical or irregular form. The nightly composition comes from the shared world
+clock, so refreshing preserves it. New profiles are prepared at noon, while stars
+are hidden, and remain stable across midnight. This is a succession of imagined
+sky views, rather than a claim that real galaxies change shape overnight.
+
 The cabin uses a common depth projection; roof edges meet the gable, the chimney
 base follows the roof slope, and every foundation corner remains inside the shore.
 The larger shore provides a clearing around the house and fire. Tree roots and
-the fire ring remain on land. Contact shading follows the foundation edges;
+the fire ring remain on land. The entrance uses two aligned stone steps in the
+same depth projection as the foundation. Contact shading follows the foundation edges;
 cast shadows respond to sun and moon position, cloud and fog cover, and nearby
 firelight. Low celestial lights cast longer shadows. Shadows are clipped to the
 land, with bounded fire projections for the finite illustration.
@@ -67,6 +78,8 @@ or an astronomical reconstruction. Its visual references include
 [NASA's sky-color explanation](https://spaceplace.nasa.gov/blue-sky/en/),
 [NOAA's radiation fog guidance](https://www.weather.gov/safety/fog-radiation),
 [NASA's galaxy structures](https://science.nasa.gov/universe/galaxies/types/),
+[ESO's Milky Way bulge and dust lanes](https://www.eso.org/public/products/mountedimages/mounted_0193/),
+[NASA's explanation of stellar twinkling](https://starchild.gsfc.nasa.gov/docs/StarChild/questions/question26.html),
 [NOAA's aurora tutorial](https://www.spaceweather.gov/content/aurora-tutorial),
 [WMO's night-shining cloud observations](https://cloudatlas.wmo.int/en/noctilucent-clouds-appearance-a.html),
 [AMS's rainbow geometry](https://journals.ametsoc.org/abstract/journals/bams/102/2/BAMS-D-20-0101.1.xml),

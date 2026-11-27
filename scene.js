@@ -1,8 +1,8 @@
-import { drawCamp } from './camp.js?v=reverie-4';
-import { drawBirds } from './fauna.js?v=reverie-4';
-import { drawRain } from './atmosphere.js?v=reverie-4';
-import { fragmentSource } from './sky.js?v=reverie-4';
-import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from './world.js?v=reverie-4';
+import { drawCamp } from './camp.js?v=reverie-5';
+import { drawBirds } from './fauna.js?v=reverie-5';
+import { drawRain } from './atmosphere.js?v=reverie-5';
+import { fragmentSource } from './sky.js?v=reverie-5';
+import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from './world.js?v=reverie-5';
 
 
 const vertexSource = `
@@ -56,7 +56,7 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uCloudForm', 'uGalaxy', 'uCosmos', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uCloudForm', 'uGalaxy', 'uCosmos', 'uBand', 'uBandDetail', 'uGalaxyShape', 'uGalaxyPose', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
   const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
   let pixelBudget = maxPixels;
   let viewportWidth = 1, viewportHeight = 1;
@@ -100,6 +100,11 @@ function makeRenderer(canvas) {
       gl.uniform4f(uniforms.uCloudForm, ...world.cloudForm);
       gl.uniform2f(uniforms.uGalaxy, world.galaxyAngle * motion, world.galaxySpin);
       gl.uniform4f(uniforms.uCosmos, ...world.cosmos);
+      const celestial = world.celestial || DEFAULT_NIGHT;
+      gl.uniform4f(uniforms.uBand, ...celestial.band);
+      gl.uniform4f(uniforms.uBandDetail, ...celestial.bandDetail);
+      gl.uniform4f(uniforms.uGalaxyShape, ...celestial.galaxyShape);
+      gl.uniform4f(uniforms.uGalaxyPose, ...celestial.galaxyPose);
       gl.uniform4f(uniforms.uPhenomena, world.aurora, world.nightCloud, world.seaGlow, world.rainbow);
       gl.uniform4f(uniforms.uSkyFlow, world.rain, world.lightning * motion, ...world.skyFlow);
       gl.uniform4f(uniforms.uWaves, ...world.waves);
@@ -120,6 +125,59 @@ function randomGenerator(seed) {
   };
 }
 
+const DEFAULT_NIGHT = {
+  nightIndex: 0, seed: 19870921,
+  starDensity: 1, brightFraction: .016, warmFraction: .18, starScale: 1,
+  twinkleStrength: .8, twinkleRate: 1, bandFraction: .48,
+  band: [0, .18, .045, .52],
+  bandDetail: [23, 17, .4, .4],
+  galaxyShape: [0, 3, 4.6, .28],
+  galaxyPose: [.4, .74, .2, .68],
+};
+
+// Pure, indexed sampling keeps star identities stable across same-night resizes.
+// Positions are stored before rotation; y converts the shader's upward UV to canvas.
+export function prepareNightStars(width, height, celestial = DEFAULT_NIGHT) {
+  if (!(width > 0 && height > 0)) return [];
+  const night = { ...DEFAULT_NIGHT, ...celestial };
+  const count = Math.min(2000, Math.max(120, Math.floor(width * height / 1000 * night.starDensity)));
+  const seed = (night.seed >>> 0) ^ Math.imul(night.nightIndex | 0, 0x85ebca6b);
+  const [, bandWidth, bend, centerY] = night.band;
+  const [seedX, seedY] = night.bandDetail;
+  const frequency = 1.7 + ((seedY % 3) + 3) % 3;
+  return Array.from({ length: count }, (_, index) => {
+    const random = randomGenerator(seed ^ Math.imul(index + 1, 0x9e3779b9));
+    const x = random() * width;
+    const band = random() < night.bandFraction;
+    const qx = (x - width * .5) / height;
+    // Summing uniforms makes a soft concentration, rather than two sharp band edges.
+    const spread = (random() + random() + random() - 1.5) * bandWidth * .56;
+    const skyY = .21 + random() * .79;
+    const uvY = band ? centerY + Math.sin(qx * frequency + seedX * .07) * bend
+      + Math.sin(qx * frequency * .43 + seedY) * bend * .35 + spread : skyY;
+    const prominent = random() < night.brightFraction;
+    const warm = random() < night.warmFraction;
+    const temperature = random();
+    const color = warm
+      ? [231 + temperature * 12, 190 + temperature * 27, 147 + temperature * 36]
+      : [181 + temperature * 34, 206 + temperature * 21, 224 + temperature * 13];
+    return {
+      x, y: (1 - uvY) * height, band, prominent, warm,
+      color: color.map(Math.round).join(', '),
+      radius: (prominent ? .73 + random() * .43 : .18 + random() ** 1.6 * .67) * night.starScale,
+      depth: .3 + random() * .7,
+      alpha: prominent ? .78 + random() * .2 : .13 + random() ** 1.2 * .57,
+      phase: random() * Math.PI * 2,
+      phase2: random() * Math.PI * 2,
+      phase3: random() * Math.PI * 2,
+      frequency: (.22 + random() * .50) * night.twinkleRate,
+      frequency2: (1.1 + random() * 1.9) * night.twinkleRate,
+      frequency3: (3.8 + random() * 3.3) * night.twinkleRate,
+      twinkleAmount: (.45 + random() * .8) * night.twinkleStrength,
+    };
+  });
+}
+
 export function createUniverse(surface, starCanvas) {
   const root = document.documentElement;
   const context = starCanvas.getContext('2d');
@@ -134,6 +192,9 @@ export function createUniverse(surface, starCanvas) {
   let width = 0;
   let height = 0;
   let stars = [];
+  let preparedNightIndex = null;
+  let preparedWidth = 0;
+  let preparedHeight = 0;
   let time = 0;
   let lastFrame = 0;
   let request = 0;
@@ -147,26 +208,11 @@ export function createUniverse(surface, starCanvas) {
   const ripple = { x: 0.5, y: 0.2, time: -100 };
   const starlight = { x: 0.5, y: 0.5, time: -100 };
 
-  function prepareStars() {
-    const random = randomGenerator(19870921);
-    const count = Math.min(1800, Math.max(260, Math.floor(width * height / 1000)));
-    stars = Array.from({ length: count }, (_, index) => {
-      const x = random() * width;
-      let y = random() * height * 0.79;
-      if (index % 2 === 0) {
-        const qx = (x - width * 0.5) / height;
-        y = height * (0.52 - qx * 0.42 - Math.sin(qx * 2.1) * 0.045 + (random() - 0.5) * 0.23);
-      }
-      return {
-        x, y,
-        radius: random() * 0.65 + 0.20,
-        depth: 0.3 + random() * 0.7,
-        alpha: 0.14 + random() * 0.61,
-        phase: random() * Math.PI * 2,
-        prominent: index % 127 === 0,
-        warm: index % 7 === 0,
-      };
-    });
+  function prepareStars(celestial) {
+    stars = prepareNightStars(width, height, celestial);
+    preparedNightIndex = celestial.nightIndex;
+    preparedWidth = width;
+    preparedHeight = height;
   }
 
   function drawStars() {
@@ -192,28 +238,34 @@ export function createUniverse(surface, starCanvas) {
     const pointerX = (pointer.x * .5 + .5) * width;
     const pointerY = (.5 - pointer.y * .5) * height;
     const seeking = motionAmount > .5 && Math.abs(target.x) + Math.abs(target.y) > .005;
-    const rotation = world.galaxyAngle * motionAmount + world.cosmos[0];
+    const celestial = world.celestial || DEFAULT_NIGHT;
+    const rotation = world.galaxyAngle * motionAmount + world.cosmos[0] + celestial.band[0];
     const cos = Math.cos(rotation), sin = Math.sin(rotation);
+    const centerY = height * (1 - celestial.band[3]);
     const starVisibility = world.night * (1 - smooth(.65, .90, world.coverage)) * (1 - smooth(.42, .68, world.fog));
     if (starVisibility > .001) for (const star of stars) {
-      const depth = .65 + star.depth * .35;
+      const depth = star.band ? 1 : .65 + star.depth * .35;
       const sx = star.x - width * .5;
-      const sy = height * .48 - star.y;
-      const movingX = width * .5 + cos * sx - sin * sy + pointer.x * star.depth * 13 - drift.x * height * depth;
+      const sy = centerY - star.y;
+      const movingX = width * .5 + cos * sx - sin * sy - pointer.x * height * .010
+        + pointer.x * (star.depth - .5) * 5 - drift.x * height * depth;
       const x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
-      const y = height * .48 - sin * sx - cos * sy - pointer.y * star.depth * 9 + drift.y * height * depth;
+      const y = centerY - sin * sx - cos * sy + pointer.y * height * .006
+        - pointer.y * (star.depth - .5) * 4 + drift.y * height * depth;
       if (y < 5 || y > height * 0.790) continue;
-      // Two incommensurate frequencies give each star its own scintillation.
-      const scintillation = Math.sin(world.seconds * (.57 + star.depth * .81) + star.phase) * .13
-        + Math.sin(world.seconds * (1.71 + star.depth * .37) + star.phase * 2.13) * .08;
-      const twinkle = .79 + scintillation * motionAmount * (.65 + y / height * .5);
+      // Independent broad frequency bands avoid synchronized pulsing, with
+      // stronger scintillation close to the horizon.
+      const scintillation = (Math.sin(world.seconds * star.frequency + star.phase) * .52
+        + Math.sin(world.seconds * star.frequency2 + star.phase2) * .31
+        + Math.sin(world.seconds * star.frequency3 + star.phase3) * .17) * star.twinkleAmount;
+      const twinkle = Math.max(.25, .82 + scintillation * .18 * motionAmount * (.6 + smooth(.3, .79, y / height) * 1.15));
       const distance = Math.hypot(x - pointerX, y - pointerY);
       const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
       const edgeFade = Math.min(1, y / 12, (height * .790 - y) / 12);
       const cloud = cloudAt(x / width, 1 - y / height, width / height, world);
       const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * starVisibility * (1 - cloud) ** 2 * (1 - world.fog * .5);
       if (proximity > 0 && star.alpha > .36 && alpha > .05) near.push({ x, y, distance });
-      const color = star.warm ? '222, 199, 155' : '193, 215, 228';
+      const color = star.color;
       context.fillStyle = `rgba(${color}, ${alpha})`;
       context.beginPath();
       context.arc(x, y, (star.radius + (star.prominent ? .25 : 0)) * (1 + scintillation * .16 * motionAmount), 0, Math.PI * 2);
@@ -307,6 +359,9 @@ export function createUniverse(surface, starCanvas) {
 
   function draw() {
     world = sampleWorld();
+    const celestial = world.celestial || DEFAULT_NIGHT;
+    // world selects its next night at noon, while stars are hidden, not midnight.
+    if (celestial.nightIndex !== preparedNightIndex || width !== preparedWidth || height !== preparedHeight) prepareStars(celestial);
     // The shared clock keeps running even when the tab or browser is closed.
     drift.x = (Math.sin(world.seconds * .055) * .055 + Math.sin(world.seconds * .017) * .025) * motionAmount;
     drift.y = Math.sin(world.seconds * .046) * .033 * motionAmount;
@@ -349,7 +404,6 @@ export function createUniverse(surface, starCanvas) {
     starCanvas.height = Math.round(height * ratio);
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
     renderer?.resize(width, height);
-    prepareStars();
     draw();
     resizing = 0;
   }

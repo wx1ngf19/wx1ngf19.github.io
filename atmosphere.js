@@ -1,4 +1,4 @@
-import { SEA_LEVEL } from './world.js?v=reverie-4';
+import { SEA_LEVEL } from './world.js?v=reverie-5';
 
 // Upper-atmosphere light is drawn before the lower clouds, which obscure it.
 // Green oxygen curtains, a violet lower fringe and a restrained red upper glow.
@@ -11,17 +11,17 @@ vec3 atmosphericLight(vec2 p) {
     float base = 0.43 + fold;
     float y = p.y - base;
     float veil = smoothstep(-0.012, 0.035, y) * exp(-max(y, 0.0) * 8.0);
-    float rays = 0.30 + 0.70 * pow(0.5 + 0.5 * sin(p.x * 94.0 + noise(vec2(p.x * 16.0, uSkyFlow.z)) * 9.0 + uSkyFlow.w * 2.0), 2.0);
-    float span = exp(-pow((p.x + 0.12) * 0.85, 2.0));
+    float rays = 0.30 + 0.70 * square(0.5 + 0.5 * sin(p.x * 94.0 + noise(vec2(p.x * 16.0, uSkyFlow.z)) * 9.0 + uSkyFlow.w * 2.0));
+    float span = exp(-square((p.x + 0.12) * 0.85));
     color += vec3(0.08, 0.54, 0.29) * veil * rays * span;
-    color += vec3(0.22, 0.055, 0.19) * exp(-pow((y + 0.002) * 95.0, 2.0)) * rays * span * 0.48;
-    color += vec3(0.18, 0.035, 0.055) * exp(-pow((y - 0.20) * 9.0, 2.0)) * rays * span * 0.34;
+    color += vec3(0.22, 0.055, 0.19) * exp(-square((y + 0.002) * 95.0)) * rays * span * 0.48;
+    color += vec3(0.18, 0.035, 0.055) * exp(-square((y - 0.20) * 9.0)) * rays * span * 0.34;
     color *= uPhenomena.x;
   }
   if (uPhenomena.y > 0.001) {
     float warp = noise(vec2(p.x * 4.0 + uSkyFlow.w * 0.1, p.y * 9.0)) * 13.0;
     float ripples = pow(max(0.0, sin(p.y * 155.0 + p.x * 8.0 + warp + uSkyFlow.z)), 7.0);
-    float veil = exp(-pow((p.y - 0.39 - sin(p.x * 2.0) * 0.05) * 10.0, 2.0));
+    float veil = exp(-square((p.y - 0.39 - sin(p.x * 2.0) * 0.05) * 10.0));
     color += vec3(0.23, 0.40, 0.51) * ripples * veil * uPhenomena.y * 0.52;
   }
   return color;
@@ -32,9 +32,9 @@ vec3 rainbowLight(vec2 p, float aspect) {
   float radius = length(p - center);
   // Red lies on the outer edge of a primary bow; violet lies inside.
   vec3 spectrum = vec3(
-    exp(-pow((radius - 0.38) / 0.008, 2.0)),
-    exp(-pow((radius - 0.37) / 0.008, 2.0)),
-    exp(-pow((radius - 0.36) / 0.008, 2.0))
+    exp(-square((radius - 0.38) / 0.008)),
+    exp(-square((radius - 0.37) / 0.008)),
+    exp(-square((radius - 0.36) / 0.008))
   );
   return spectrum * uPhenomena.w * 0.16;
 }

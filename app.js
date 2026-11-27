@@ -1,5 +1,5 @@
-import { createUniverse } from './scene.js?v=reverie-4';
-import { createSoundtrack } from './music.js?v=reverie-4';
+import { createUniverse } from './scene.js?v=reverie-5';
+import { createSoundtrack } from './music.js?v=reverie-5';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');

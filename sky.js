@@ -1,5 +1,5 @@
-import { SEA_LEVEL } from './world.js?v=reverie-4';
-import { atmosphereSource } from './atmosphere.js?v=reverie-4';
+import { SEA_LEVEL } from './world.js?v=reverie-5';
+import { atmosphereSource } from './atmosphere.js?v=reverie-5';
 
 export const fragmentSource = `
 precision highp float;
@@ -8,6 +8,7 @@ uniform vec2 uResolution, uPointer, uDrift, uCloudOffset, uGalaxy;
 uniform float uTime, uMotion;
 uniform vec3 uRipple, uSun;
 uniform vec4 uMoon, uWorld, uWeather, uWaves, uCosmos, uPhenomena, uSkyFlow, uCloudForm;
+uniform vec4 uBand, uBandDetail, uGalaxyShape, uGalaxyPose;
 
 float hash(vec2 p) {
   vec2 cell = mod(p, 256.0);
@@ -29,6 +30,91 @@ float fbm(vec2 p) {
   return value;
 }
 mat2 rotation(float a) { return mat2(cos(a), sin(a), -sin(a), cos(a)); }
+float square(float x) { return x * x; }
+
+// A different remote system is framed each night. NASA's observed galaxy
+// classes inform these structures; this is artistic time, not rapid evolution
+// of one real galaxy. All profiles have diffuse edges and no planetary limb.
+vec3 distantGalaxy(vec2 p, float aspect) {
+  float scale = uGalaxyPose.z * min(1.0, aspect / 0.85);
+  vec2 center = vec2((uGalaxyPose.x - 0.5) * aspect, uGalaxyPose.y);
+  center += vec2(uCosmos.z * 0.12, (uCosmos.y - 1.0) * 0.06);
+  vec2 g = rotation(-uGalaxyShape.w - uGalaxy.y) * (p + uDrift * 0.15 - center) / scale;
+  g.y /= uGalaxyPose.w;
+  float r = length(g);
+  // Do no galaxy texture work outside this small area of the sky.
+  if (r >= 3.0) return vec3(0.0);
+  float edge = 1.0 - smoothstep(2.2, 3.0, r);
+  vec2 seed = uBandDetail.xy;
+  float grain = noise(g * 21.0 + seed);
+  float patches = noise(g * 4.5 + seed * 0.7);
+  vec3 oldStars = vec3(0.46, 0.35, 0.23);
+  vec3 youngStars = mix(vec3(0.14, 0.26, 0.34), vec3(0.24, 0.31, 0.39), uBandDetail.z);
+  vec3 color = vec3(0.0);
+
+  if (uGalaxyShape.x < 0.5) {
+    // A flocculent or grand-design disk: young arms and an old central bulge.
+    float a = atan(g.y, g.x + 0.00001);
+    float phase = a * uGalaxyShape.y - log(r + 0.18) * uGalaxyShape.z;
+    float sharpness = mix(3.0, 10.0, fract(seed.x * 0.17));
+    float arms = pow(0.5 + 0.5 * cos(phase), sharpness);
+    float dust = pow(0.5 + 0.5 * cos(phase + 0.62), 14.0) * smoothstep(0.18, 0.55, r);
+    float disk = exp(-r * 1.6);
+    color = youngStars * disk * (0.10 + arms * (0.50 + patches * 0.65)) * (1.0 - dust * 0.70);
+    color += oldStars * exp(-r * 5.7) * 0.64;
+  } else if (uGalaxyShape.x < 1.5) {
+    // Arms begin at the ends of a resolved central stellar bar.
+    float a = atan(g.y, g.x + 0.00001);
+    float phase = a * 2.0 - log(max(r, 0.62) / 0.62) * uGalaxyShape.z;
+    float arms = pow(0.5 + 0.5 * cos(phase), 6.0) * smoothstep(0.48, 0.78, r);
+    float bar = exp(-g.y * g.y * 35.0 - g.x * g.x * 2.4);
+    float dust = pow(0.5 + 0.5 * cos(phase + 0.48), 16.0) * smoothstep(0.55, 0.9, r);
+    color = youngStars * exp(-r * 1.45) * arms * (0.68 + patches * 0.5) * (1.0 - dust * 0.68);
+    color += oldStars * (bar * 0.47 + exp(-r * 6.0) * 0.25);
+  } else if (uGalaxyShape.x < 2.5) {
+    // Old stars form an elongated, softly declining envelope, with no arms.
+    // Resolved grain keeps this a remote star cloud rather than a solid orb.
+    float envelope = exp(-pow(r * 2.8, 0.78));
+    float core = exp(-r * 6.5);
+    color = mix(oldStars, vec3(0.29, 0.30, 0.29), smoothstep(0.0, 1.3, r));
+    color *= (envelope * 0.80 + core * 0.20) * (0.66 + grain * 0.48);
+  } else {
+    // An irregular system: unequal off-center star-forming clumps, no disk.
+    vec2 offset = vec2(0.50 + fract(seed.x * 0.13) * 0.34, 0.24);
+    float cloudA = exp(-dot(g + offset, g + offset) * 2.2);
+    float cloudB = exp(-dot(g - vec2(0.42, -0.35), g - vec2(0.42, -0.35)) * 4.2);
+    float cloudC = exp(-dot(g - vec2(-0.10, 0.68), g - vec2(-0.10, 0.68)) * 5.5);
+    float broken = smoothstep(0.20, 0.80, patches) * (0.54 + grain * 0.68);
+    color = youngStars * (cloudA * 0.56 + cloudB * 0.89 + cloudC * 0.42) * broken;
+    color += vec3(0.23, 0.14, 0.18) * cloudB * pow(max(grain - 0.48, 0.0) * 1.8, 3.0) * 0.45;
+  }
+  return color * edge * 0.76;
+}
+
+vec3 galacticSky(vec2 p, float aspect) {
+  float angle = uGalaxy.x + uCosmos.x + uBand.x;
+  vec2 q = rotation(-angle) * (p + uDrift + uPointer * vec2(0.010, 0.006) - vec2(0.0, uBand.w));
+  float frequency = 1.7 + mod(uBandDetail.y, 3.0);
+  float bend = sin(q.x * frequency + uBandDetail.x * 0.07) * uBand.z;
+  bend += sin(q.x * frequency * 0.43 + uBandDetail.y) * uBand.z * 0.35;
+  float spine = q.y - bend;
+  vec2 flow = vec2(sin(uGalaxy.y) * 0.45, cos(uGalaxy.y) * 0.30);
+  float dust = fbm(q * vec2(4.8, 8.0) + uBandDetail.xy + flow);
+  float grain = noise(q * 49.0 + uBandDetail.xy + flow * 2.0 + dust * 2.0);
+  float band = exp(-pow(abs(spine) / (uBand.y * uCosmos.y), 1.4));
+  float lane = spine + (dust - 0.5) * uBand.y * 0.90;
+  float rift = exp(-square(lane / (0.006 + uBand.y * 0.13)));
+  float split = exp(-square((lane - uBand.y * 0.46) / 0.013)) * uBandDetail.w;
+  float fragments = mix(1.0, 0.20 + smoothstep(0.18, 0.75, dust) * 0.80, uBandDetail.w);
+  vec3 cool = vec3(0.12, 0.23, 0.29);
+  vec3 warm = vec3(0.37, 0.28, 0.19);
+  float tint = clamp(uBandDetail.z * 0.65 + smoothstep(-0.65, 0.70, q.x + uCosmos.z) * 0.50, 0.0, 1.0);
+  vec3 stars = mix(cool, warm, tint);
+  vec3 color = stars * band * (0.32 + dust) * (0.42 + grain * 0.72) * fragments;
+  // Optical dust absorbs the starlight behind it; it is not emissive striping.
+  color *= (1.0 - rift * 0.82) * (1.0 - split * 0.66);
+  return color * 1.45 + distantGalaxy(p, aspect);
+}
 ${atmosphereSource}
 vec3 sunlight() {
   // Longer optical path at low solar altitude removes more short wavelengths.
@@ -44,31 +130,14 @@ vec3 sky(vec2 p, float aspect) {
   vec3 daySky = mix(vec3(0.66, 0.79, 0.84), vec3(0.075, 0.32, 0.59), pow(h, 0.48));
   vec3 color = mix(nightSky, daySky, day);
   float sunset = dusk * exp(-h * 3.1);
-  float towardSun = exp(-pow((p.x - sun.x) * 1.3, 2.0));
-  color = mix(color, vec3(0.52, 0.32, 0.38), dusk * pow(h * (1.0 - h) * 4.0, 2.0) * 0.28);
+  float towardSun = exp(-square((p.x - sun.x) * 1.3));
+  color = mix(color, vec3(0.52, 0.32, 0.38), dusk * square(h * (1.0 - h) * 4.0) * 0.28);
   color += vec3(0.78, 0.30, 0.12) * sunset * (0.25 + towardSun * 0.75);
 
-  // A luminous stellar disk with dust lanes, not an image painted on the sky.
+  // Extended stellar structures share the stars' cloud and fog extinction.
   float stellarVisibility = night * (1.0 - smoothstep(0.65, 0.90, uWeather.x)) * (1.0 - smoothstep(0.42, 0.68, uWeather.y));
   if (stellarVisibility > 0.001) {
-  vec2 q = rotation(-uGalaxy.x - uCosmos.x) * (p + uDrift + uPointer * vec2(0.010, 0.006) - vec2(0.0, 0.52)) + vec2(0.0, 0.52);
-  float spine = q.y - 0.48 - q.x * 0.42 - sin(q.x * 2.1 + uCosmos.z) * 0.045;
-  vec2 flow = vec2(sin(uGalaxy.y) * 0.8, cos(uGalaxy.y) * 0.5);
-  float dust = fbm(q * 6.0 + flow + vec2(7.0, 2.0));
-  float grain = noise(q * 49.0 + flow * 2.0 + dust * 2.0);
-  float band = exp(-pow(abs(spine + (dust - 0.5) * 0.13) * 7.7 / uCosmos.y, 1.4));
-  float rift = 1.0 - smoothstep(0.008, 0.050, abs(spine + (dust - 0.5) * 0.11));
-  vec3 stellar = mix(vec3(0.15, 0.27, 0.30), vec3(0.39, 0.30, 0.19), smoothstep(-0.45, 0.65, q.x + uCosmos.z));
-  color += stellar * band * (0.3 + dust) * (0.4 + grain * 0.7) * (1.0 - rift * 0.73) * stellarVisibility * 1.4;
-
-  // An original distant spiral: older warm core, cooler arms, differential flow.
-  vec2 g = rotation(0.28 + uCosmos.x) * (q - vec2(0.40 + uCosmos.z, 0.74 + uCosmos.x * 0.3)) / uCosmos.y;
-  g.y *= 2.8;
-  float r = length(g);
-  float a = atan(g.y, g.x);
-  float arms = pow(0.5 + 0.5 * cos(a * 3.0 - log(r + 0.018) * (4.6 + uCosmos.w * 0.8) - uGalaxy.y), 7.0);
-  float disk = exp(-r * 12.0);
-  color += (vec3(0.11, 0.18, 0.22) * arms * disk * 0.55 + vec3(0.34, 0.28, 0.18) * exp(-r * 65.0) * 0.5) * stellarVisibility;
+    color += galacticSky(p, aspect) * stellarVisibility;
   }
 
   color += atmosphericLight(p);
@@ -102,7 +171,7 @@ vec3 sky(vec2 p, float aspect) {
   cloudNight *= 0.88 + uCloudForm.w * 0.20 + max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z)) * 0.28;
   vec3 cloudColor = mix(cloudNight, cloudDay, day);
   cloudColor += tint * dusk * towardSun * (1.0 - shade) * 0.58;
-  float cloudFlash = uSkyFlow.y * exp(-pow((p.x - 0.36) * 2.4, 2.0));
+  float cloudFlash = uSkyFlow.y * exp(-square((p.x - 0.36) * 2.4));
   cloudColor += vec3(0.40, 0.45, 0.57) * cloudFlash;
   color = mix(color, cloudColor, clouds * 0.95);
   if (uPhenomena.w > 0.001) color += rainbowLight(p, aspect) * (1.0 - clouds * 0.5);
@@ -139,10 +208,10 @@ void main() {
     color = mix(vec3(0.008, 0.021, 0.033), vec3(0.085, 0.28, 0.32), uWorld.x);
     color += mix(vec3(0.05, 0.11, 0.15), vec3(0.12, 0.27, 0.30), uWorld.x) * (crest * 0.45 + fine * 0.18) * (0.65 + uWeather.z * 0.55) * (0.3 + uMotion * 0.7);
     float sunX = (uSun.x - 0.5) * aspect + (swell - 0.5) * depth * 0.7;
-    float reflection = exp(-pow((p.x - sunX) / (0.018 + depth * 0.88), 2.0));
+    float reflection = exp(-square((p.x - sunX) / (0.018 + depth * 0.88)));
     color += sunlight() * reflection * (crest * 0.7 + fine * 0.32) * exp(-depth * 4.0) * smoothstep(-0.08, 0.12, uSun.z);
     float moonX = (uMoon.x - 0.5) * aspect + (swell - 0.5) * depth * 0.5;
-    float lunar = exp(-pow((p.x - moonX) / (0.02 + depth * 0.75), 2.0));
+    float lunar = exp(-square((p.x - moonX) / (0.02 + depth * 0.75)));
     color += vec3(0.23, 0.29, 0.30) * lunar * (crest * 0.45 + fine * 0.15) * uWorld.y * max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z));
     color += vec3(0.32, 0.14, 0.055) * uWorld.z * exp(-depth * 4.0) * 0.25;
     if (uPhenomena.z > 0.001) {
@@ -155,7 +224,7 @@ void main() {
       vec2 center = vec2((uRipple.x - 0.5) * aspect, uRipple.y);
       float radius = length((p - center) * vec2(1.0, 1.7));
       float ring = max(sin((radius - age * 0.13) * 100.0), 0.0);
-      float envelope = exp(-pow((radius - age * 0.13) * 19.0, 2.0)) * exp(-age * 1.1);
+      float envelope = exp(-square((radius - age * 0.13) * 19.0)) * exp(-age * 1.1);
       color += mix(vec3(0.13, 0.22, 0.24), vec3(0.31, 0.45, 0.43), uWorld.x) * ring * envelope * 0.4;
     }
     color *= 0.45 + 0.55 * smoothstep(0.0, 0.15, uv.y);
@@ -163,7 +232,7 @@ void main() {
     color = mix(color, mix(vec3(0.07, 0.10, 0.13), vec3(0.60, 0.70, 0.72), uWorld.x), mist);
     color += mix(vec3(0.06, 0.11, 0.14), vec3(0.21, 0.36, 0.39), uWorld.x) * exp(-depth * 85.0);
   }
-  float edge = pow(abs(uv.x - 0.5) * 1.35, 2.0);
+  float edge = square((uv.x - 0.5) * 1.35);
   color *= 1.0 - edge * 0.26;
   gl_FragColor = vec4(color, 1.0);
 }

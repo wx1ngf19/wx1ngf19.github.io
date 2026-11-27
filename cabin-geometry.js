@@ -59,3 +59,21 @@ export const cabinShadowVertices = [
     [capBackLeft, -11 * (distance + chimneyDepth)], [capBackRight, -11 * (distance + chimneyDepth)]]
     .map(([point, ground]) => [point[0], ground, ground - point[1]]),
 ];
+
+function entryStone(left, ground, width, depth, rise) {
+  const frontLeft = [left - depth, ground - rise + depth * 11 / 29];
+  const frontRight = [frontLeft[0] + width, frontLeft[1]];
+  const backLeft = [left, ground - rise], backRight = [left + width, ground - rise];
+  const bottomLeft = add(frontLeft, [0, rise]), bottomRight = add(frontRight, [0, rise]);
+  return {
+    top: [backLeft, backRight, frontRight, frontLeft],
+    front: [frontLeft, frontRight, bottomRight, bottomLeft],
+    side: [backRight, frontRight, bottomRight, add(backRight, [0, rise])],
+    contact: [bottomLeft, bottomRight],
+  };
+}
+
+export const entryGeometry = {
+  upper: entryStone(-8, 5, 20, 4, 5),
+  lower: entryStone(-12, 5 + 4 * 11 / 29, 20, 5, 1.3),
+};
