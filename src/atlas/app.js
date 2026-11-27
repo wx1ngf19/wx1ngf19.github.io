@@ -3,6 +3,7 @@ import { createGlobe } from './globe.js?v=atlas-2';
 
 const $ = selector => document.querySelector(selector);
 const names = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'], { type: 'region' }) : null;
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const cnRegions = { BJ: 'Beijing', TJ: 'Tianjin', HE: 'Hebei', SX: 'Shanxi', NM: 'Inner Mongolia', LN: 'Liaoning', JL: 'Jilin', HL: 'Heilongjiang', SH: 'Shanghai', JS: 'Jiangsu', ZJ: 'Zhejiang', AH: 'Anhui', FJ: 'Fujian', JX: 'Jiangxi', SD: 'Shandong', HA: 'Henan', HB: 'Hubei', HN: 'Hunan', GD: 'Guangdong', GX: 'Guangxi', HI: 'Hainan', CQ: 'Chongqing', SC: 'Sichuan', GZ: 'Guizhou', YN: 'Yunnan', XZ: 'Tibet', SN: 'Shaanxi', GS: 'Gansu', QH: 'Qinghai', NX: 'Ningxia', XJ: 'Xinjiang' };
 let world = null;
 let globe = null;
@@ -31,13 +32,31 @@ function span(className, text) {
   return node;
 }
 
+function count(value) {
+  return value >= 100000 ? compact.format(value) : value.toLocaleString('en');
+}
+
 function chooseCountry(code) {
+  const previous = selected;
+  const fromList = $('#country-list').contains(document.activeElement);
+  const fromDetail = $('#region-detail').contains(document.activeElement);
   selected = code;
   globe?.select(code);
   $('#region-detail').hidden = !code;
+  $('#country-list').hidden = Boolean(code);
+  $('#origins-heading').hidden = Boolean(code);
   for (const button of document.querySelectorAll('#country-list button')) button.setAttribute('aria-pressed', String(button.dataset.country === code));
+  if (code !== previous) {
+    $('#region-list').scrollTop = 0;
+    if (code && fromList) $('#clear-country').focus({ preventScroll: true });
+    else if (!code && fromDetail) {
+      Array.from(document.querySelectorAll('#country-list button')).find(button => button.dataset.country === previous)?.focus({ preventScroll: true });
+    }
+  }
   if (!code || !data) return;
   $('#region-heading').textContent = countryName(code);
+  $('#region-heading').title = countryName(code);
+  $('#region-list').setAttribute('aria-label', `${countryName(code)} regional visits`);
   const rows = data.regions.filter(row => row.country === code);
   const list = $('#region-list');
   list.replaceChildren();
@@ -48,7 +67,11 @@ function chooseCountry(code) {
   }
   for (const row of rows) {
     const item = document.createElement('li');
-    item.append(span('', regionName(row)), span('', row.views.toLocaleString('en')));
+    const name = span('region-name', regionName(row));
+    name.title = regionName(row);
+    const views = span('region-views', count(row.views));
+    views.title = `${row.views.toLocaleString('en')} visits`;
+    item.append(name, views);
     list.append(item);
   }
 }
@@ -84,7 +107,8 @@ function timeline() {
 }
 
 function render() {
-  $('#total-views').textContent = data.total.toLocaleString('en');
+  $('#total-views').textContent = count(data.total);
+  $('#total-views').title = `${data.total.toLocaleString('en')} visits`;
   $('#total-countries').textContent = data.countryCount.toLocaleString('en');
   $('#range-label').textContent = `${days}d`;
   const list = $('#country-list');
@@ -102,7 +126,8 @@ function render() {
     button.dataset.country = row.country;
     button.setAttribute('aria-pressed', String(row.country === selected));
     button.setAttribute('aria-label', `${countryName(row.country)}, ${row.views} visits. Show regions.`);
-    button.append(span('country-name', countryName(row.country)), span('country-views', row.views.toLocaleString('en')));
+    button.title = `${countryName(row.country)} · ${row.views.toLocaleString('en')} visits`;
+    button.append(span('country-name', countryName(row.country)), span('country-views', count(row.views)));
     button.addEventListener('click', () => chooseCountry(selected === row.country ? null : row.country));
     item.append(button);
     list.append(item);
@@ -157,8 +182,7 @@ for (const button of document.querySelectorAll('[data-days]')) {
     const next = Number(button.dataset.days);
     if (next === days) return;
     days = next;
-    selected = null;
-    $('#region-detail').hidden = true;
+    chooseCountry(null);
     globe?.reset();
     for (const item of document.querySelectorAll('[data-days]')) item.setAttribute('aria-pressed', String(item === button));
     void load();

@@ -7,8 +7,8 @@
     <meta name="description" content="A little atlas of everyone who found their way here.">
     <title>Atlas · Reverie</title>
     <link rel="icon" href="../assets/icons/favicon.svg?v=reverie-8" type="image/svg+xml">
-    <link rel="stylesheet" href="../assets/styles/atlas.css?v=atlas-2">
-    <script type="module" src="../src/atlas/app.js?v=atlas-2"></script>
+    <link rel="stylesheet" href="../assets/styles/atlas.css?v=atlas-3">
+    <script type="module" src="../src/atlas/app.js?v=atlas-3"></script>
   </head>
   <body>
     <div class="atlas-aura" aria-hidden="true"></div>
@@ -31,9 +31,11 @@
         <div class="summary"><div><strong id="total-views">—</strong><span>visits</span></div><div><strong id="total-countries">—</strong><span>places</span></div></div>
         <div class="connection-row"><div class="connection-state" id="atlas-status" role="status" aria-live="polite">Connecting</div><button type="button" id="refresh-atlas" aria-label="Refresh counts" title="Refresh counts"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M19 9a7.5 7.5 0 1 0 0 7M19 4v5h-5"/></svg></button></div>
         <button class="retry" id="retry-atlas" type="button" hidden>Retry</button>
-        <div class="section-label"><h2>Origins</h2><span id="range-label">30d</span></div>
-        <ol class="country-list" id="country-list" aria-label="Visits by country or territory"></ol>
-        <div class="region-detail" id="region-detail" hidden><div class="section-label"><h2 id="region-heading"></h2><button type="button" id="clear-country" aria-label="Clear selection">×</button></div><ol id="region-list"></ol></div>
+        <section class="origins" aria-label="Visit origins">
+          <div class="section-label" id="origins-heading"><h2>Origins</h2><span id="range-label">30d</span></div>
+          <ol class="country-list" id="country-list" aria-label="Visits by country or territory" tabindex="0"></ol>
+          <div class="region-detail" id="region-detail" hidden><div class="section-label"><h2 id="region-heading"></h2><button type="button" id="clear-country" aria-label="All origins" title="All origins">×</button></div><ol id="region-list" aria-label="Regional visits" tabindex="0"></ol></div>
+        </section>
         <div class="timeline-wrap"><svg id="visit-timeline" viewBox="0 0 300 62" role="img" aria-label="Daily visits"></svg><div class="timeline-dates"><span id="first-date">—</span><span id="last-date">—</span></div></div>
       </aside>
     </main>
