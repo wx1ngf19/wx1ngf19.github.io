@@ -11,9 +11,11 @@
     <meta property="og:url" content="https://wx1ngf19.github.io/">
     <title>Reverie</title>
     <link rel="icon" href="./assets/icons/favicon.svg?v=reverie-8" type="image/svg+xml">
-    <link rel="stylesheet" href="./assets/styles/main.css?v=reverie-8">
+    <link rel="stylesheet" href="./assets/styles/main.css?v=reverie-11">
     <link rel="modulepreload" href="./src/audio/requested.js?v=reverie-9">
-    <script type="module" src="./src/app.js?v=reverie-10"></script>
+    <script type="module" src="./src/app.js?v=reverie-11"></script>
+    <script type="module" src="./src/analytics/visit.js?v=atlas-1"></script>
+    <script type="module" src="./src/atlas/portal.js?v=atlas-2"></script>
   </head>
   <body>
     <main class="universe-stage" id="home" aria-label="wx1ngf19 的星辰大海">
@@ -36,6 +38,11 @@
       <a class="music-credit" id="music-credit" href="./pages/music.html" target="_blank" rel="noopener" aria-label="我的曲目" title="Selected music" hidden>
         <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.3v5.4"/><circle cx="10" cy="5.7" r=".7" fill="currentColor" stroke="none"/></svg>
       </a>
+      <a class="atlas-entry" href="./pages/atlas.html" aria-label="Open atlas" title="Atlas">
+        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="17" stroke="currentColor" stroke-width=".6"/><ellipse cx="32" cy="32" rx="26" ry="9" transform="rotate(-30 32 32)" stroke="currentColor" stroke-width=".6"/><path d="m28 19 8 3 5 8-6 5-2 10-7-8-6-7 3-7Z" fill="currentColor" opacity=".3"/><circle cx="53" cy="18" r="1.5" fill="currentColor"/></svg>
+        <canvas id="atlas-orb" aria-hidden="true" hidden></canvas>
+      </a>
     </main>
+    <dialog class="atlas-dialog" id="atlas-dialog" aria-label="Visitor atlas"><button id="close-atlas" type="button" aria-label="Close atlas" title="Close atlas">×</button><div id="atlas-frame-host"></div></dialog>
   </body>
 </html>

@@ -10,6 +10,7 @@ const pointerCanvas = document.querySelector('#pointer-canvas');
 const context = pointerCanvas.getContext('2d');
 const aura = document.querySelector('.pointer-aura');
 let quietEffects = reducedMotion.matches;
+let atlasOpen = Boolean(document.querySelector('#atlas-dialog')?.open);
 let hasMouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
 let pointerFrame = 0;
 let previousFrame = 0;
@@ -47,7 +48,7 @@ function spawnMote(x, y) {
 
 function drawPointer(timestamp) {
   pointerFrame = 0;
-  if (!context || quietEffects || document.hidden || !hasMouse) return;
+  if (!context || quietEffects || atlasOpen || document.hidden || !hasMouse) return;
   const delta = previousFrame ? Math.min((timestamp - previousFrame) / 1000, 0.05) : 0.016;
   previousFrame = timestamp;
   context.clearRect(0, 0, viewportWidth, viewportHeight);
@@ -93,7 +94,7 @@ function drawPointer(timestamp) {
 }
 
 function wakePointer() {
-  if (!pointerFrame && !quietEffects && hasMouse && !document.hidden) {
+  if (!pointerFrame && !quietEffects && !atlasOpen && hasMouse && !document.hidden) {
     previousFrame = 0;
     pointerFrame = requestAnimationFrame(drawPointer);
   }
@@ -107,6 +108,7 @@ function resetPointer() {
 }
 
 window.addEventListener('pointermove', (event) => {
+  if (atlasOpen) return;
   if (event.pointerType === 'touch') return;
   if (event.pointerType === 'mouse') {
     hasMouse = true;
@@ -129,7 +131,7 @@ window.addEventListener('pointermove', (event) => {
 document.addEventListener('pointerleave', resetPointer);
 window.addEventListener('blur', resetPointer);
 stage.addEventListener('pointerdown', (event) => {
-  if (event.target.closest('button')) return;
+  if (event.target.closest('button, a')) return;
   universe.interact(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
 }, { passive: true });
 
@@ -148,7 +150,7 @@ function setQuietEffects(value) {
 
 reducedMotion.addEventListener('change', (event) => setQuietEffects(event.matches));
 window.addEventListener('keydown', (event) => {
-  if (event.code === 'Space' && !event.repeat && !event.target.closest('button')) {
+  if (!atlasOpen && event.code === 'Space' && !event.repeat && !event.target.closest('button, a')) {
     event.preventDefault();
     soundtrack.toggle();
   }
@@ -165,3 +167,15 @@ document.addEventListener('visibilitychange', () => {
 });
 sizePointerCanvas();
 setQuietEffects(quietEffects);
+window.addEventListener('reverie:atlas', event => {
+  atlasOpen = Boolean(event.detail.open);
+  universe.setActive(!atlasOpen);
+  if (atlasOpen) {
+    cancelAnimationFrame(pointerFrame);
+    pointerFrame = 0;
+    context?.clearRect(0, 0, viewportWidth, viewportHeight);
+    motes.forEach(mote => { mote.life = 0; });
+    resetPointer();
+  }
+});
+if (atlasOpen) universe.setActive(false);
