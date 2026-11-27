@@ -1,5 +1,4 @@
-import { requestedTracks } from './requested.js?v=reverie-7';
-import { soundtracks } from './library.js?v=reverie-7';
+import { requestedTracks } from './requested.js?v=reverie-8';
 
 const list = document.querySelector('#selected-tracks');
 const recording = document.querySelector('#recording');
@@ -15,6 +14,7 @@ function element(tag, className, text) {
 }
 
 function closePlayer(restoreFocus = true) {
+  player.querySelector('audio')?.pause();
   player.replaceChildren();
   recording.hidden = true;
   buttons.forEach(button => button.setAttribute('aria-pressed', 'false'));
@@ -25,12 +25,21 @@ function closePlayer(restoreFocus = true) {
 function select(track) {
   closePlayer(false);
   selectedId = track.id;
-  const frame = document.createElement('iframe');
-  frame.src = track.embedUrl;
-  frame.title = `${track.title} · ${track.artist} · Official player`;
-  frame.className = track.provider;
-  frame.referrerPolicy = 'strict-origin-when-cross-origin';
-  player.append(frame);
+  if (track.src) {
+    const audio = document.createElement('audio');
+    audio.src = track.src;
+    audio.controls = true;
+    audio.preload = 'none';
+    audio.setAttribute('aria-label', `${track.title} · ${track.artist}`);
+    player.append(audio);
+  } else {
+    const frame = document.createElement('iframe');
+    frame.src = track.embedUrl;
+    frame.title = `${track.title} · ${track.artist} · Official player`;
+    frame.className = track.provider;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    player.append(frame);
+  }
   document.querySelector('#recording-title').textContent = track.title;
   document.querySelector('#recording-artist').textContent = `${track.artist} · ${track.album}`;
   document.querySelector('#official-source').href = track.source;
@@ -43,6 +52,7 @@ function select(track) {
 requestedTracks.forEach((track, index) => {
   const external = track.provider === 'youtube';
   const button = element(external ? 'a' : 'button', 'track');
+  button.id = track.id;
   button.dataset.track = track.id;
   if (external) {
     button.href = track.source;
@@ -65,34 +75,13 @@ requestedTracks.forEach((track, index) => {
   list.append(button);
 });
 
-const credits = document.querySelector('#background-tracks');
-for (const [bank, tracks] of Object.entries(soundtracks)) {
-  credits.append(element('h2', '', bank === 'day' ? 'Day · 白天' : 'Night · 夜晚'));
-  for (const track of tracks) {
-    const article = element('article', 'credit');
-    article.id = track.id;
-    article.append(element('h3', '', `${track.title} · ${track.artist}`), element('p', '', track.attribution));
-    const links = element('div', 'credit-links');
-    for (const [name, href] of [['原始来源', track.source], [track.license, track.licenseUrl]]) {
-      const link = element('a', '', name);
-      link.href = href;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      links.append(link);
-    }
-    article.append(links);
-    credits.append(article);
-  }
-}
-
 function showHash() {
   let id;
   try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
   if (!id) return;
   const target = document.getElementById(id);
-  if (target?.classList.contains('credit')) {
-    document.querySelector('#background').open = true;
-    requestAnimationFrame(() => target.scrollIntoView());
+  if (target?.classList.contains('track')) {
+    requestAnimationFrame(() => target.scrollIntoView({ block: 'center' }));
   }
 }
 document.querySelector('#close-player').addEventListener('click', () => closePlayer());

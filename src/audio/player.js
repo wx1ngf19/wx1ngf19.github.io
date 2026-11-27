@@ -1,7 +1,7 @@
-import { soundtracks } from './library.js?v=reverie-7';
-import { sampleWorld } from '../world/time.js?v=reverie-7';
+import { requestedTracks } from './requested.js?v=reverie-8';
 
 const LISTENING_VOLUME = .42;
+const playableTracks = requestedTracks.filter(track => track.src);
 
 export function createSoundtrack(audio, button) {
   const root = document.documentElement;
@@ -12,36 +12,25 @@ export function createSoundtrack(audio, button) {
   let fadeFrame = 0;
   let waveAnimation;
   let currentTrack = null;
-  let currentBank = null;
-  let changingBank = false;
   let failedTrack = false;
-  const queues = { day: [], night: [] };
-
-  function bankForTime() {
-    const light = sampleWorld().daylight;
-    if (currentBank === 'day' && light >= .24) return 'day';
-    if (currentBank === 'night' && light <= .62) return 'night';
-    return light > .45 ? 'day' : 'night';
-  }
+  let queue = [];
 
   function chooseTrack(forceNext = false) {
-    const bank = bankForTime();
-    if (!forceNext && !failedTrack && currentTrack && currentBank === bank && !audio.ended) return;
-    if (!queues[bank].length) {
-      const shuffled = soundtracks[bank].slice();
+    if (!forceNext && !failedTrack && currentTrack && !audio.ended) return;
+    if (!queue.length) {
+      const shuffled = playableTracks.slice();
       for (let index = shuffled.length - 1; index > 0; index -= 1) {
         const other = Math.floor(Math.random() * (index + 1));
         [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
       }
       if (shuffled[0]?.id === currentTrack?.id) shuffled.push(shuffled.shift());
-      queues[bank] = shuffled;
+      queue = shuffled;
     }
-    currentTrack = queues[bank].shift();
-    currentBank = bank;
+    currentTrack = queue.shift();
+    if (!currentTrack) throw new Error('No direct recording available');
     failedTrack = false;
     audio.src = new URL(currentTrack.src, document.baseURI).href;
     audio.dataset.track = currentTrack.id;
-    audio.dataset.bank = bank;
     audio.loop = false;
   }
 
@@ -58,8 +47,8 @@ export function createSoundtrack(audio, button) {
     if (credit && currentTrack) {
       credit.hidden = false;
       credit.href = new URL(`./pages/music.html#${encodeURIComponent(currentTrack.id)}`, document.baseURI).href;
-      credit.title = `精选曲目与音乐署名 · ${currentTrack.title}`;
-      credit.setAttribute('aria-label', `精选曲目与音乐署名：${currentTrack.title}，${currentTrack.artist}`);
+      credit.title = `我的曲目 · ${currentTrack.title}`;
+      credit.setAttribute('aria-label', `我的曲目：${currentTrack.title}，${currentTrack.artist}`);
     }
   }
 
@@ -94,7 +83,6 @@ export function createSoundtrack(audio, button) {
   function pause() {
     wanted = false;
     revision += 1;
-    changingBank = false;
     cancelFade();
     audio.pause();
     show(audio.error ? 'error' : 'paused');
@@ -103,7 +91,6 @@ export function createSoundtrack(audio, button) {
   async function play({ next = false } = {}) {
     wanted = true;
     const current = ++revision;
-    changingBank = false;
     cancelFade();
     try {
       chooseTrack(next || failedTrack || !!audio.error);
@@ -130,7 +117,7 @@ export function createSoundtrack(audio, button) {
   audio.addEventListener('playing', () => {
     if (!wanted || document.hidden) { pause(); return; }
     show('playing');
-    if (!changingBank) fadeTo(LISTENING_VOLUME, 1800);
+    fadeTo(LISTENING_VOLUME, 1800);
   });
   audio.addEventListener('waiting', () => { if (wanted) show('loading'); });
   audio.addEventListener('pause', () => {
@@ -153,15 +140,6 @@ export function createSoundtrack(audio, button) {
     if (wanted && !document.hidden) void play({ next: true });
     else pause();
   });
-  // Dusk and dawn move between libraries with a short fade, never a hard cut.
-  setInterval(() => {
-    if (!wanted || audio.paused || changingBank || currentBank === bankForTime() || button.dataset.audio !== 'playing') return;
-    changingBank = true;
-    const current = revision;
-    fadeTo(0, 1200, () => {
-      if (wanted && current === revision) void play({ next: true });
-    });
-  }, 5000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   show('paused');
   return { toggle };

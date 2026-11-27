@@ -1,4 +1,4 @@
-import { SEA_LEVEL } from '../world/time.js?v=reverie-7';
+import { SEA_LEVEL } from '../world/time.js?v=reverie-8';
 
 // NOAA describes arcs, folded ray curtains and diffuse pulsating patches:
 // https://www.swpc.noaa.gov/phenomena/aurora

@@ -1,10 +1,10 @@
 // A shared fictional world, not a forecast or a simulation of Earth's location.
 // Solar altitude, atmospheric extinction, radiation fog and galactic structure
 // inform the art; time and stellar rotation are deliberately accelerated.
-import { celestialProfile } from './celestial.js?v=reverie-7';
+import { celestialProfile } from './celestial.js?v=reverie-8';
 
 export const WORLD_EPOCH = Date.UTC(2026, 10, 26);
-export const DAY_SECONDS = 18 * 60;
+export const DAY_SECONDS = 9 * 60;
 // Weather and local motion keep their pace when the daylight clock changes.
 const EVOLUTION_SECONDS = 36 * 60;
 export const SEA_LEVEL = .205;
