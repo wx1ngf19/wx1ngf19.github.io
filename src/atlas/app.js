@@ -12,6 +12,71 @@ let selected = null;
 let days = 30;
 let revision = 0;
 let controller = null;
+const note = $('.atlas-note');
+const noteToggle = note.querySelector('summary');
+let noteTimer = 0;
+let noteHover = false;
+let noteKeyboard = false;
+let notePointer = 'mouse';
+
+function openNote() {
+  clearTimeout(noteTimer);
+  note.open = true;
+}
+
+function closeNote(restoreFocus = false) {
+  clearTimeout(noteTimer);
+  if (restoreFocus && note.contains(document.activeElement)) noteToggle.focus({ preventScroll: true });
+  note.open = false;
+}
+
+function leaveNote() {
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => {
+    if (!noteHover && !(noteKeyboard && note.contains(document.activeElement))) closeNote();
+  }, 120);
+}
+
+note.addEventListener('pointerenter', event => {
+  if (event.pointerType !== 'mouse') return;
+  noteHover = true;
+  noteKeyboard = false;
+  openNote();
+});
+note.addEventListener('pointerleave', event => {
+  if (event.pointerType !== 'mouse') return;
+  noteHover = false;
+  leaveNote();
+});
+noteToggle.addEventListener('click', event => {
+  if (event.detail > 0 && notePointer === 'mouse') {
+    event.preventDefault();
+    openNote();
+  }
+});
+note.addEventListener('focusin', () => { if (noteKeyboard) openNote(); });
+note.addEventListener('focusout', event => {
+  if (!note.contains(event.relatedTarget) && !noteHover) closeNote();
+});
+document.addEventListener('pointerdown', event => {
+  noteKeyboard = false;
+  notePointer = event.pointerType;
+  if (event.pointerType !== 'mouse') noteHover = false;
+  if (!note.contains(event.target)) closeNote();
+}, true);
+document.addEventListener('pointermove', event => {
+  if (event.pointerType !== 'mouse' || !noteKeyboard) return;
+  noteKeyboard = false;
+  if (!noteHover) leaveNote();
+}, { passive: true });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Tab') noteKeyboard = true;
+  if (event.key !== 'Escape' || !note.open) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  closeNote(true);
+}, true);
+window.addEventListener('blur', () => closeNote());
 
 function countryName(code) {
   if (code === 'XX') return 'Unknown';
@@ -37,6 +102,7 @@ function count(value) {
 }
 
 function chooseCountry(code) {
+  if (code !== selected) closeNote();
   const previous = selected;
   const fromList = $('#country-list').contains(document.activeElement);
   const fromDetail = $('#region-detail').contains(document.activeElement);
@@ -142,6 +208,7 @@ function render() {
 }
 
 async function load() {
+  closeNote();
   const current = ++revision;
   controller?.abort();
   const activeController = new AbortController();
@@ -191,7 +258,7 @@ for (const button of document.querySelectorAll('[data-days]')) {
 $('#retry-atlas').addEventListener('click', () => { void load(); });
 $('#refresh-atlas').addEventListener('click', () => { void load(); });
 $('#clear-country').addEventListener('click', () => chooseCountry(null));
-$('#reset-globe').addEventListener('click', () => { chooseCountry(null); globe?.reset(); });
+$('#reset-globe').addEventListener('click', () => { closeNote(); chooseCountry(null); globe?.reset(); });
 
 async function initializeMap() {
   try {
