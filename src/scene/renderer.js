@@ -1,8 +1,8 @@
 import { drawCamp } from './camp.js?v=reverie-8';
-import { drawBirds } from './fauna.js?v=reverie-8';
-import { drawRain } from './atmosphere.js?v=reverie-8';
-import { fragmentSource } from './sky.js?v=reverie-8';
-import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from '../world/time.js?v=reverie-8';
+import { drawBirds } from './fauna.js?v=reverie-10';
+import { drawRain } from './atmosphere.js?v=reverie-10';
+import { fragmentSource } from './sky.js?v=reverie-10';
+import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from '../world/time.js?v=reverie-10';
 
 
 const vertexSource = `

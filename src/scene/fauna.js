@@ -1,4 +1,4 @@
-import { smooth } from '../world/time.js?v=reverie-8';
+import { smooth } from '../world/time.js?v=reverie-10';
 
 const mod = (x, n) => ((x % n) + n) % n;
 function seeded(index, salt) {
