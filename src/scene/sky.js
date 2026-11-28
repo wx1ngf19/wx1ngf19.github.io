@@ -1,5 +1,7 @@
-import { SEA_LEVEL } from '../world/time.js?v=reverie-10';
-import { atmosphereSource } from './atmosphere.js?v=reverie-10';
+import { SEA_LEVEL } from '../world/time.js?v=reverie-11';
+import { atmosphereSource } from './atmosphere.js?v=reverie-11';
+import { daylightSource } from './daylight.js?v=reverie-1';
+import { wonderSource } from './wonders.js?v=reverie-1';
 
 export const fragmentSource = `
 precision highp float;
@@ -9,6 +11,7 @@ uniform float uTime, uMotion;
 uniform vec3 uRipple, uSun;
 uniform vec4 uMoon, uWorld, uWeather, uWaves, uCosmos, uPhenomena, uSkyFlow, uCloudForm;
 uniform vec4 uBand, uBandDetail, uGalaxyShape, uGalaxyPose;
+uniform vec4 uWonder, uWonderPose;
 
 float hash(vec2 p) {
   vec2 cell = mod(p, 256.0);
@@ -115,6 +118,8 @@ vec3 galacticSky(vec2 p, float aspect) {
   color *= (1.0 - rift * 0.82) * (1.0 - split * 0.66);
   return color * 1.45 + distantGalaxy(p, aspect);
 }
+${wonderSource}
+${daylightSource}
 ${atmosphereSource}
 vec3 sunlight() {
   // Longer optical path at low solar altitude removes more short wavelengths.
@@ -137,14 +142,21 @@ vec3 sky(vec2 p, float aspect) {
   // Extended stellar structures share the stars' cloud and fog extinction.
   float stellarVisibility = night * (1.0 - smoothstep(0.65, 0.90, uWeather.x)) * (1.0 - smoothstep(0.42, 0.68, uWeather.y));
   if (stellarVisibility > 0.001) {
-    color += galacticSky(p, aspect) * stellarVisibility;
+    color *= 1.0 - wonderOccultation(p, aspect) * stellarVisibility;
+    color += deepSkyWonder(p, aspect) * stellarVisibility;
   }
 
   color += atmosphericLight(p);
 
   float sunDistance = length(p - sun);
   float sunVisible = smoothstep(-0.11, 0.01, uSun.z);
-  color += tint * (exp(-sunDistance * 9.0) * 0.17 + exp(-sunDistance * 45.0) * 0.38) * sunVisible;
+  // Broad scattered dawn light survives behind a ridge; its direct halo does not.
+  float directHalo = 0.0;
+  if (sunVisible > 0.001 && sunDistance < 0.16) {
+    directHalo = exp(-sunDistance * 45.0) * 0.38 * directSourceVisibility(sun);
+    directHalo *= 1.0 - smoothstep(0.12, 0.16, sunDistance);
+  }
+  color += tint * (exp(-sunDistance * 9.0) * 0.17 + directHalo) * sunVisible;
   color = mix(color, tint * 1.1, (1.0 - smoothstep(0.010, 0.012, sunDistance)) * sunVisible);
 
   vec2 moon = vec2((uMoon.x - 0.5) * aspect, uMoon.y);
@@ -157,8 +169,22 @@ vec3 sky(vec2 p, float aspect) {
     float lunarOpacity = (1.0 - smoothstep(0.89, 1.0, mr)) * (night * 0.94 + (1.0 - night) * lit * 0.34);
     color = mix(color, max(color, moonColor), lunarOpacity);
   }
+  color += lunarHalo(p, moon);
 
-  vec2 cloudUV = vec2(p.x / (h * 0.6 + 0.18), 1.0 / (h * 0.7 + 0.12)) * 1.4 * uCloudForm.xy + uCloudOffset;
+  vec2 highCloud = vec2(0.0);
+  if (day > 0.005) {
+    highCloud = highCloudLayer(p, h);
+    vec3 highColor = mix(vec3(0.77, 0.85, 0.88), vec3(0.98, 0.95, 0.86), exp(-sunDistance * 3.5));
+    highColor += tint * dusk * towardSun * 0.22;
+    color = mix(color, highColor, highCloud.x * day);
+    // Diffraction colours stay on a thin, nearby cloud edge, never across the sky.
+    float iridescence = smoothstep(0.54, 0.78, uCloudForm.w) * smoothstep(0.53, 0.83, uWeather.w);
+    iridescence *= exp(-square((sunDistance - 0.105) / 0.065)) * highCloud.x * (1.0 - uSkyFlow.x);
+    vec3 fringe = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + sunDistance * 15.0 + highCloud.y * 0.45));
+    color += fringe * iridescence * day * 0.14;
+    color += daylightOptics(p, sun, highCloud.x, tint);
+  }
+  vec2 cloudUV = lowCloudCoordinates(p, h);
   float body = fbm(cloudUV);
   float detail = noise(cloudUV * 3.0);
   float threshold = 0.76 - uWeather.x * 0.50;
@@ -167,6 +193,13 @@ vec3 sky(vec2 p, float aspect) {
   vec3 cloudDay = mix(vec3(0.91, 0.92, 0.89), vec3(0.45, 0.53, 0.59), shade * (0.4 + uWeather.x * 0.6));
   cloudDay *= 0.86 + uCloudForm.w * 0.17;
   cloudDay += mix(vec3(-0.012, 0.004, 0.020), vec3(0.025, 0.012, -0.005), uCloudForm.w) * (1.0 - shade);
+  if (day > 0.005) {
+    // A broad shaded base and broken sunward faces give the lower clouds depth.
+    float face = noise(cloudUV * 0.92 + vec2((sun.x - p.x) * 0.45, 0.32));
+    cloudDay *= 0.88 + smoothstep(0.19, 0.79, face) * 0.22;
+    float rim = (1.0 - smoothstep(threshold + 0.035, threshold + 0.20, body + detail * 0.10));
+    cloudDay += tint * rim * exp(-sunDistance * 4.0) * (1.0 - uWeather.x * 0.55) * 0.31;
+  }
   vec3 cloudNight = mix(vec3(0.045, 0.065, 0.087), vec3(0.016, 0.030, 0.045), shade);
   cloudNight *= 0.88 + uCloudForm.w * 0.20 + max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z)) * 0.28;
   vec3 cloudColor = mix(cloudNight, cloudDay, day);
@@ -177,12 +210,14 @@ vec3 sky(vec2 p, float aspect) {
   if (uPhenomena.w > 0.001) color += rainbowLight(p, aspect) * (1.0 - clouds * 0.5);
   color *= 1.0 - uWeather.x * day * 0.10;
 
-  // Receding headlands share the sky's light and disappear into moist air.
-  float hill = ${SEA_LEVEL} + 0.012 + noise(vec2(p.x * 3.5 + 28.0, 9.0)) * 0.025 + noise(vec2(p.x * 11.0, 4.0)) * 0.014;
-  hill *= 0.99 + sin(p.x * 2.1) * 0.01;
-  float land = (1.0 - smoothstep(hill - 0.001, hill + 0.001, p.y)) * smoothstep(-0.12, 0.35, p.x);
+  // Opaque rock blocks the solar/lunar disks; aerial perspective lightens its
+  // own colour instead of mixing the background sun through its surface.
+  float land = headlandMask(p);
   vec3 mountain = mix(vec3(0.012, 0.027, 0.039), vec3(0.30, 0.45, 0.47), day);
-  color = mix(color, mountain, land * 0.75);
+  vec3 aerial = mix(vec3(0.028, 0.049, 0.066), vec3(0.47, 0.60, 0.63), day);
+  aerial += tint * sunset * towardSun * 0.13;
+  mountain = mix(mountain, aerial, 0.22 + uWeather.y * 0.30);
+  color = mix(color, mountain, land);
   float mist = 1.0 - exp(-uWeather.y * 5.0 * exp(-h * 8.0) * (0.75 + detail * 0.25));
   vec3 mistColor = mix(vec3(0.075, 0.105, 0.13), vec3(0.64, 0.72, 0.73), day);
   mistColor += tint * dusk * 0.12;
@@ -209,10 +244,16 @@ void main() {
     color += mix(vec3(0.05, 0.11, 0.15), vec3(0.12, 0.27, 0.30), uWorld.x) * (crest * 0.45 + fine * 0.18) * (0.65 + uWeather.z * 0.55) * (0.3 + uMotion * 0.7);
     float sunX = (uSun.x - 0.5) * aspect + (swell - 0.5) * depth * 0.7;
     float reflection = exp(-square((p.x - sunX) / (0.018 + depth * 0.88)));
-    color += sunlight() * reflection * (crest * 0.7 + fine * 0.32) * exp(-depth * 4.0) * smoothstep(-0.08, 0.12, uSun.z);
+    vec2 solarSource = vec2((uSun.x - 0.5) * aspect, uSun.y);
+    if (uSun.z > -0.08 && reflection > 0.001) {
+      color += sunlight() * reflection * (crest * 0.7 + fine * 0.32) * exp(-depth * 4.0) * smoothstep(-0.08, 0.12, uSun.z) * waterSourceVisibility(solarSource, depth);
+    }
     float moonX = (uMoon.x - 0.5) * aspect + (swell - 0.5) * depth * 0.5;
     float lunar = exp(-square((p.x - moonX) / (0.02 + depth * 0.75)));
-    color += vec3(0.23, 0.29, 0.30) * lunar * (crest * 0.45 + fine * 0.15) * uWorld.y * max(0.0, sin(uMoon.w)) * (0.5 - 0.5 * cos(uMoon.z));
+    vec2 lunarSource = vec2((uMoon.x - 0.5) * aspect, uMoon.y);
+    if (uWorld.y > 0.001 && uMoon.w > 0.0 && lunar > 0.001) {
+      color += vec3(0.23, 0.29, 0.30) * lunar * (crest * 0.45 + fine * 0.15) * uWorld.y * sin(uMoon.w) * (0.5 - 0.5 * cos(uMoon.z)) * waterSourceVisibility(lunarSource, depth);
+    }
     color += vec3(0.32, 0.14, 0.055) * uWorld.z * exp(-depth * 4.0) * 0.25;
     if (uPhenomena.z > 0.001) {
       float bloom = noise(water * vec2(0.18, 0.09) + uSkyFlow.zw * 0.3);
@@ -227,6 +268,7 @@ void main() {
       float envelope = exp(-square((radius - age * 0.13) * 19.0)) * exp(-age * 1.1);
       color += mix(vec3(0.13, 0.22, 0.24), vec3(0.31, 0.45, 0.43), uWorld.x) * ring * envelope * 0.4;
     }
+    color *= seaCloudShadow(p, depth, aspect);
     color *= 0.45 + 0.55 * smoothstep(0.0, 0.15, uv.y);
     float mist = 1.0 - exp(-uWeather.y * 4.0 * exp(-depth * 10.0));
     color = mix(color, mix(vec3(0.07, 0.10, 0.13), vec3(0.60, 0.70, 0.72), uWorld.x), mist);

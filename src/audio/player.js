@@ -1,5 +1,5 @@
 import { requestedTracks } from './requested.js?v=reverie-9';
-import { createMusicNote } from '../ui/music-note.js?v=reverie-1';
+import { createMusicNote } from '../ui/music-note.js?v=reverie-2';
 
 const LISTENING_VOLUME = .42;
 const playableTracks = requestedTracks.filter(track => track.src);

@@ -1,5 +1,3 @@
-import { DAY_SECONDS } from '../world/time.js?v=reverie-10';
-
 export function createMusicNote(note) {
   if (!note?.matches('details.music-note')) return () => {};
   const toggle = note.querySelector('summary');
@@ -8,8 +6,6 @@ export function createMusicNote(note) {
   const artist = note.querySelector('#music-note-artist');
   const album = note.querySelector('#music-note-album');
   const status = note.querySelector('#music-note-state');
-  const period = note.querySelector('#music-note-period');
-  if (period) period.textContent = [Math.floor(DAY_SECONDS / 60), DAY_SECONDS % 60].map(value => String(value).padStart(2, '0')).join(':');
   const states = { ready: 'Ready', playing: 'Playing', paused: 'Paused', loading: 'Loading', error: 'Unavailable' };
   let timer = 0;
   let hovered = false;
@@ -41,8 +37,15 @@ export function createMusicNote(note) {
   function crossesBridge(x, y) {
     const trigger = toggle.getBoundingClientRect();
     const panel = card.getBoundingClientRect();
-    if (y < panel.bottom || y > trigger.bottom) return false;
-    const progress = (y - panel.bottom) / (trigger.bottom - panel.bottom);
+    if (panel.right < trigger.left) {
+      if (x < panel.right || x > trigger.left) return false;
+      const progress = (x - panel.right) / (trigger.left - panel.right);
+      const top = panel.top + (trigger.top - panel.top) * progress;
+      const bottom = panel.bottom + (trigger.bottom - panel.bottom) * progress;
+      return y >= top && y <= bottom;
+    }
+    if (panel.bottom >= trigger.top || y < panel.bottom || y > trigger.top) return false;
+    const progress = (y - panel.bottom) / (trigger.top - panel.bottom);
     const left = panel.left + (trigger.left - panel.left) * progress;
     const right = panel.right + (trigger.right - panel.right) * progress;
     return x >= left && x <= right;

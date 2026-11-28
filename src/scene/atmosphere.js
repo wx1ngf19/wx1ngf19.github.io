@@ -1,4 +1,4 @@
-import { SEA_LEVEL } from '../world/time.js?v=reverie-10';
+import { SEA_LEVEL } from '../world/time.js?v=reverie-11';
 
 // NOAA describes arcs, folded ray curtains and diffuse pulsating patches:
 // https://www.swpc.noaa.gov/phenomena/aurora
@@ -18,6 +18,7 @@ vec3 auroralLight(vec2 p) {
   vec2 flow = uSkyFlow.zw;
   float drift = flow.x * 0.70 + flow.y * 0.45;
   float breathing = 0.78 + 0.22 * sin(seed.y + flow.x * 1.4 + flow.y);
+  float expansion = smoothstep(0.025, 0.65, uPhenomena.x);
   vec3 oxygen = mix(vec3(0.075, 0.55, 0.24), vec3(0.055, 0.43, 0.47), palette);
   vec3 nitrogen = mix(vec3(0.22, 0.055, 0.42), vec3(0.40, 0.045, 0.22), palette);
   vec3 upperRed = vec3(0.40, 0.045, 0.070);
@@ -33,7 +34,7 @@ vec3 auroralLight(vec2 p) {
     float base = 0.43 + depth * 0.095 + sx * slope;
     float span = exp(-square(sx * (1.65 + depth * 0.55)));
     float strength = mix(0.78, 0.34, depth) * breathing;
-    float height = 0.16 + hash(seed + depth + 57.0) * 0.15;
+    float height = (0.16 + hash(seed + depth + 57.0) * 0.15) * (0.58 + expansion * 0.42);
 
     if (form < 0.5) {
       // Quiet, long parallel arcs: curved bright edges and a faint upper veil.
@@ -41,8 +42,8 @@ vec3 auroralLight(vec2 p) {
       base += sin(sx * 5.0 + phase + drift) * 0.022;
     } else if (form < 1.5) {
       // Active folded curtains; large folds and fine rays move independently.
-      base += sin(sx * 7.0 + phase + drift) * 0.064;
-      base += sin(sx * 18.0 - phase + flow.y * 0.9) * 0.022;
+      base += sin(sx * 7.0 + phase + drift) * (0.025 + expansion * 0.039);
+      base += sin(sx * 18.0 - phase + flow.y * 0.9) * (0.009 + expansion * 0.013);
     } else if (form < 2.5) {
       // An overhead view makes field-aligned rays converge toward a zenith.
       base += square(sx) * 0.18 + sin(sx * 4.0 + phase) * 0.018;

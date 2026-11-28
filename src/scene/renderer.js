@@ -1,8 +1,9 @@
 import { drawCamp } from './camp.js?v=reverie-8';
-import { drawBirds } from './fauna.js?v=reverie-10';
-import { drawRain } from './atmosphere.js?v=reverie-10';
-import { fragmentSource } from './sky.js?v=reverie-10';
-import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from '../world/time.js?v=reverie-10';
+import { drawBirds } from './fauna.js?v=reverie-11';
+import { drawRain } from './atmosphere.js?v=reverie-11';
+import { fragmentSource } from './sky.js?v=reverie-11';
+import { createWonderLens, projectLensedStar, drawSkyMeteors } from './wonders.js?v=reverie-1';
+import { sampleWorld, cloudAt, smooth, SEA_LEVEL } from '../world/time.js?v=reverie-11';
 
 
 const vertexSource = `
@@ -56,7 +57,7 @@ function makeRenderer(canvas) {
   const position = gl.getAttribLocation(program, 'aPosition');
   gl.enableVertexAttribArray(position);
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uCloudForm', 'uGalaxy', 'uCosmos', 'uBand', 'uBandDetail', 'uGalaxyShape', 'uGalaxyPose', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves'].map((key) => [key, gl.getUniformLocation(program, key)]));
+  const uniforms = Object.fromEntries(['uResolution', 'uPointer', 'uDrift', 'uTime', 'uRipple', 'uSun', 'uMoon', 'uWorld', 'uWeather', 'uCloudOffset', 'uCloudForm', 'uGalaxy', 'uCosmos', 'uBand', 'uBandDetail', 'uGalaxyShape', 'uGalaxyPose', 'uPhenomena', 'uSkyFlow', 'uMotion', 'uWaves', 'uWonder', 'uWonderPose'].map((key) => [key, gl.getUniformLocation(program, key)]));
   const maxPixels = navigator.hardwareConcurrency <= 4 ? 800000 : 1150000;
   let pixelBudget = maxPixels;
   let viewportWidth = 1, viewportHeight = 1;
@@ -73,9 +74,11 @@ function makeRenderer(canvas) {
       gl.uniform2f(uniforms.uResolution, width, height);
     },
     observeFrame(elapsed) {
-      if (elapsed > 250) return;
+      if (elapsed > 1000) return;
       frameTotal += elapsed;
-      if (++frameCount < 60) return;
+      frameCount += 1;
+      // Respond in wall-clock time even when a device cannot deliver 60 frames.
+      if (frameCount < 30 && frameTotal < 1200) return;
       const average = frameTotal / frameCount;
       frameCount = 0;
       frameTotal = 0;
@@ -107,6 +110,8 @@ function makeRenderer(canvas) {
       gl.uniform4f(uniforms.uGalaxyPose, ...celestial.galaxyPose);
       gl.uniform4f(uniforms.uPhenomena, world.aurora, world.nightCloud, world.seaGlow, world.rainbow);
       gl.uniform4f(uniforms.uSkyFlow, world.rain, world.lightning * motion, ...world.skyFlow);
+      gl.uniform4f(uniforms.uWonder, ...(world.wonder || [0, 0, 0, 0]));
+      gl.uniform4f(uniforms.uWonderPose, ...(world.wonderPose || [0, 0, 0, 0]));
       gl.uniform4f(uniforms.uWaves, ...world.waves);
       gl.uniform1f(uniforms.uMotion, motion);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -242,6 +247,16 @@ export function createUniverse(surface, starCanvas) {
     const rotation = world.galaxyAngle * motionAmount + world.cosmos[0] + celestial.band[0];
     const cos = Math.cos(rotation), sin = Math.sin(rotation);
     const centerY = height * (1 - celestial.band[3]);
+    const lens = createWonderLens(world, width, height);
+    const lensedStar = [0, 0, 1, 1, 0];
+    if (lens) {
+      context.save();
+      context.beginPath();
+      context.rect(0, 0, width, height);
+      context.moveTo(lens.x + lens.coreRadius, lens.y);
+      context.arc(lens.x, lens.y, lens.coreRadius, 0, Math.PI * 2);
+      context.clip('evenodd');
+    }
     const starVisibility = world.night * (1 - smooth(.65, .90, world.coverage)) * (1 - smooth(.42, .68, world.fog));
     if (starVisibility > .001) for (const star of stars) {
       const depth = star.band ? 1 : .65 + star.depth * .35;
@@ -249,9 +264,11 @@ export function createUniverse(surface, starCanvas) {
       const sy = centerY - star.y;
       const movingX = width * .5 + cos * sx - sin * sy - pointer.x * height * .010
         + pointer.x * (star.depth - .5) * 5 - drift.x * height * depth;
-      const x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
-      const y = centerY - sin * sx - cos * sy + pointer.y * height * .006
+      let x = ((movingX + 16) % (width + 32) + width + 32) % (width + 32) - 16;
+      let y = centerY - sin * sx - cos * sy + pointer.y * height * .006
         - pointer.y * (star.depth - .5) * 4 + drift.y * height * depth;
+      projectLensedStar(x, y, lens, lensedStar);
+      [x, y] = lensedStar;
       if (y < 5 || y > height * 0.790) continue;
       // Independent broad frequency bands avoid synchronized pulsing, with
       // stronger scintillation close to the horizon.
@@ -263,12 +280,14 @@ export function createUniverse(surface, starCanvas) {
       const proximity = seeking ? Math.max(0, 1 - distance / 115) : 0;
       const edgeFade = Math.min(1, y / 12, (height * .790 - y) / 12);
       const cloud = cloudAt(x / width, 1 - y / height, width / height, world);
-      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * starVisibility * (1 - cloud) ** 2 * (1 - world.fog * .5);
+      const alpha = Math.min(1, (star.prominent ? .85 : star.alpha * 1.12) * twinkle + proximity * .35) * edgeFade * starVisibility * (1 - cloud) ** 2 * (1 - world.fog * .5) * lensedStar[2];
       if (proximity > 0 && star.alpha > .36 && alpha > .05) near.push({ x, y, distance });
       const color = star.color;
       context.fillStyle = `rgba(${color}, ${alpha})`;
       context.beginPath();
-      context.arc(x, y, (star.radius + (star.prominent ? .25 : 0)) * (1 + scintillation * .16 * motionAmount), 0, Math.PI * 2);
+      const starRadius = (star.radius + (star.prominent ? .25 : 0)) * (1 + scintillation * .16 * motionAmount);
+      if (lensedStar[3] > 1.001) context.ellipse(x, y, starRadius, starRadius * lensedStar[3], lensedStar[4], 0, Math.PI * 2);
+      else context.arc(x, y, starRadius, 0, Math.PI * 2);
       context.fill();
       if (star.prominent) {
         const glow = context.createRadialGradient(x, y, 0, x, y, 6);
@@ -301,6 +320,7 @@ export function createUniverse(surface, starCanvas) {
         context.stroke();
       }
     }
+    if (lens) context.restore();
 
     const lightAge = time - starlight.time;
     if (lightAge >= 0 && lightAge < 2.4) {
@@ -329,29 +349,7 @@ export function createUniverse(surface, starCanvas) {
       context.restore();
     }
 
-    const meteorSlot = Math.floor(world.seconds / 37);
-    const eventSeed = Math.sin(meteorSlot * 127.1 + 311.7) * 43758.5453;
-    const eventRandom = eventSeed - Math.floor(eventSeed);
-    const meteorDuration = 1.25 + eventRandom * 1.1;
-    const meteorPhase = ((world.seconds % 37) + 37) % 37 - 4 - eventRandom * 17;
-    if (eventRandom > .19 && meteorPhase >= 0 && meteorPhase < meteorDuration && world.night > .1 && motionAmount > .5) {
-      const progress = meteorPhase / meteorDuration;
-      const direction = eventRandom > .55 ? 1 : -1;
-      const x = width * (.2 + eventRandom * .6 + direction * (progress - .5) * .22);
-      const y = height * (.09 + eventRandom * .24 + progress * .13);
-      const tailX = -direction * width * (.055 + eventRandom * .045);
-      const tailY = -height * .062;
-      const trail = context.createLinearGradient(x, y, x + tailX, y + tailY);
-      const visibility = world.night * (1 - cloudAt(x / width, 1 - y / height, width / height, world));
-      trail.addColorStop(0, `rgba(224, 219, 198, ${Math.sin(progress * Math.PI) * .60 * visibility})`);
-      trail.addColorStop(1, 'rgba(224, 219, 198, 0)');
-      context.strokeStyle = trail;
-      context.lineWidth = 1;
-      context.beginPath();
-      context.moveTo(x, y);
-      context.lineTo(x + tailX, y + tailY);
-      context.stroke();
-    }
+    drawSkyMeteors(context, width, height, world, motionAmount, cloudAt);
     drawBirds(context, width, height, world, motionAmount);
     drawCamp(context, { width, height, time: world.seconds * Math.max(.25, motionAmount), world });
     drawRain(context, width, height, world, motionAmount);

@@ -2,6 +2,7 @@
 // Solar altitude, atmospheric extinction, radiation fog and galactic structure
 // inform the art; time and stellar rotation are deliberately accelerated.
 import { celestialProfile } from './celestial.js?v=reverie-8';
+import { nightEncounter } from './encounters.js?v=reverie-1';
 
 export const WORLD_EPOCH = Date.UTC(2026, 10, 26);
 export const DAY_SECONDS = 5 * 60 + 20;
@@ -64,8 +65,14 @@ export function sampleWorld(now = Date.now()) {
   const nightIndex = Math.floor(days + .5);
   const lampThreshold = -.11 - random(nightIndex, 61327) * .13;
   const houseLight = (1 - smooth(lampThreshold - .05, lampThreshold + .05, altitude)) * (.78 + weatherSignal(seconds, 98231, 310) * .22);
+  const encounter = nightEncounter(days, nightIndex);
+  const wonderStrength = encounter.strength * night * (1 - smooth(.54, .93, coverage)) * (1 - smooth(.28, .64, fog));
   const activity = weatherSignal(seconds, 72817, EVOLUTION_SECONDS * .61);
-  const aurora = night * smooth(.63, .88, activity) * (1 - coverage * .72) * (1 - fog * .85);
+  const nightTime = days - nightIndex;
+  const substorm = smooth(-.25, -.035, nightTime) * (1 - smooth(.045, .25, nightTime));
+  const competingLight = smooth(.05, .65, wonderStrength) * (encounter.kind === 3 ? .78 : encounter.kind === 2 ? .55 : .25);
+  const aurora = night * smooth(.63, .88, activity) * (1 - coverage * .72) * (1 - fog * .85)
+    * (.32 + substorm * .68) * (1 - competingLight);
   const nightCloud = smooth(-.28, -.20, altitude) * (1 - smooth(-.12, -.09, altitude))
     * smooth(.55, .82, character) * (1 - coverage * .8);
   const seaGlow = night * smooth(.58, .84, weatherSignal(seconds, 83917, EVOLUTION_SECONDS * 1.31)) * (1 - rain * .8);
@@ -85,6 +92,8 @@ export function sampleWorld(now = Date.now()) {
     celestial: celestialProfile(nightIndex),
     fire: (1 - smooth(-.14, .065, altitude)) * (1 - rain * .82),
     rain, aurora, nightCloud, seaGlow, rainbow, lightning,
+    wonder: [encounter.kind, wonderStrength, encounter.seed, encounter.progress],
+    wonderPose: encounter.pose,
     skyFlow: [Math.sin(skyPhase), Math.cos(skyPhase)],
     sun: [sunX, SEA_LEVEL + Math.sin(altitude) * .64, altitude],
     moon: [.5 - Math.sin(moonHour) * .43, SEA_LEVEL + Math.sin(moonAltitude) * .64, lunarAngle, moonAltitude],
