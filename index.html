@@ -11,9 +11,9 @@
     <meta property="og:url" content="https://wx1ngf19.github.io/">
     <title>Reverie</title>
     <link rel="icon" href="./assets/icons/favicon.svg?v=reverie-8" type="image/svg+xml">
-    <link rel="stylesheet" href="./assets/styles/main.css?v=reverie-12">
+    <link rel="stylesheet" href="./assets/styles/main.css?v=reverie-13">
     <link rel="modulepreload" href="./src/audio/requested.js?v=reverie-9">
-    <script type="module" src="./src/app.js?v=reverie-11"></script>
+    <script type="module" src="./src/app.js?v=reverie-12"></script>
     <script type="module" src="./src/analytics/visit.js?v=atlas-1"></script>
     <script type="module" src="./src/atlas/portal.js?v=atlas-2"></script>
   </head>
@@ -35,9 +35,20 @@
         <span class="music-click-wave" aria-hidden="true"></span>
         <img class="signature-symbol" src="./assets/icons/emblem.svg" width="120" height="120" alt="" draggable="false">
       </button>
-      <a class="music-credit" id="music-credit" href="./pages/music.html" target="_blank" rel="noopener" aria-label="我的曲目" title="Selected music" hidden>
-        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.3v5.4"/><circle cx="10" cy="5.7" r=".7" fill="currentColor" stroke="none"/></svg>
-      </a>
+      <details class="music-note" id="music-credit" lang="en" data-ui>
+        <summary aria-label="About the soundtrack" aria-controls="music-note-card">
+          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.15"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.3v5.4"/><circle cx="10" cy="5.7" r=".7" fill="currentColor" stroke="none"/></svg>
+        </summary>
+        <section class="music-note-card" id="music-note-card" aria-label="Soundtrack details">
+          <div class="music-note-heading"><span>Soundtrack</span><span class="music-note-status"><span aria-hidden="true"></span><span id="music-note-state" role="status">Ready</span></span></div>
+          <div class="music-note-recording">
+            <span class="music-note-record" aria-hidden="true"><span></span></span>
+            <div class="music-note-track"><h2 id="music-note-title">14.3 Billion Years</h2><a id="music-note-artist" href="https://www.andrewprahlow.com/music-highlight-reel" target="_blank" rel="noopener noreferrer" aria-label="Andrew Prahlow — composer’s website">Andrew Prahlow <span aria-hidden="true">↗</span></a></div>
+          </div>
+          <p class="music-note-album" id="music-note-album">Outer Wilds (Original Soundtrack)</p>
+          <div class="music-note-cycle"><span>A passing day</span><span><svg viewBox="0 0 24 16" width="24" height="16" fill="none" aria-hidden="true"><ellipse cx="12" cy="8" rx="10" ry="4" transform="rotate(-20 12 8)"/><circle cx="12" cy="8" r="2"/><circle cx="21" cy="5" r="1"/></svg><span id="music-note-period">05:20</span></span></div>
+        </section>
+      </details>
       <a class="atlas-entry" href="./pages/atlas.html?v=atlas-6" aria-label="Open atlas" title="Atlas">
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="17" stroke="currentColor" stroke-width=".6"/><ellipse cx="32" cy="32" rx="26" ry="9" transform="rotate(-30 32 32)" stroke="currentColor" stroke-width=".6"/><path d="m28 19 8 3 5 8-6 5-2 10-7-8-6-7 3-7Z" fill="currentColor" opacity=".3"/><circle cx="53" cy="18" r="1.5" fill="currentColor"/></svg>
         <canvas id="atlas-orb" aria-hidden="true" hidden></canvas>

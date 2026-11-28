@@ -1,5 +1,5 @@
 import { createUniverse } from './scene/renderer.js?v=reverie-10';
-import { createSoundtrack } from './audio/player.js?v=reverie-9';
+import { createSoundtrack } from './audio/player.js?v=reverie-10';
 
 const root = document.documentElement;
 const stage = document.querySelector('.universe-stage');
@@ -131,7 +131,7 @@ window.addEventListener('pointermove', (event) => {
 document.addEventListener('pointerleave', resetPointer);
 window.addEventListener('blur', resetPointer);
 stage.addEventListener('pointerdown', (event) => {
-  if (event.target.closest('button, a')) return;
+  if (event.target.closest('button, a, summary, [data-ui]')) return;
   universe.interact(event.clientX / viewportWidth, 1 - event.clientY / viewportHeight);
 }, { passive: true });
 
@@ -150,7 +150,7 @@ function setQuietEffects(value) {
 
 reducedMotion.addEventListener('change', (event) => setQuietEffects(event.matches));
 window.addEventListener('keydown', (event) => {
-  if (!atlasOpen && event.code === 'Space' && !event.repeat && !event.target.closest('button, a')) {
+  if (!atlasOpen && event.code === 'Space' && !event.repeat && !event.target.closest('button, a, summary, [data-ui]')) {
     event.preventDefault();
     soundtrack.toggle();
   }

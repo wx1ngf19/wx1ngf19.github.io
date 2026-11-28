@@ -1,4 +1,5 @@
 import { requestedTracks } from './requested.js?v=reverie-9';
+import { createMusicNote } from '../ui/music-note.js?v=reverie-1';
 
 const LISTENING_VOLUME = .42;
 const playableTracks = requestedTracks.filter(track => track.src);
@@ -6,7 +7,7 @@ const playableTracks = requestedTracks.filter(track => track.src);
 export function createSoundtrack(audio, button) {
   const root = document.documentElement;
   const clickWave = button.querySelector('.music-click-wave');
-  const credit = document.querySelector('#music-credit');
+  const updateNote = createMusicNote(document.querySelector('#music-credit'));
   let wanted = false;
   let revision = 0;
   let fadeFrame = 0;
@@ -44,12 +45,7 @@ export function createSoundtrack(audio, button) {
     button.setAttribute('aria-label', currentTrack ? `${label}：${currentTrack.title}，${currentTrack.artist}` : label);
     const action = state === 'loading' ? 'Cancel music' : playing ? 'Pause music' : state === 'error' ? 'Retry music' : 'Play music';
     button.title = currentTrack ? `${action} — ${currentTrack.title} · ${currentTrack.artist}` : action;
-    if (credit && currentTrack) {
-      credit.hidden = false;
-      credit.href = new URL(`./pages/music.html#${encodeURIComponent(currentTrack.id)}`, document.baseURI).href;
-      credit.title = `我的曲目 · ${currentTrack.title}`;
-      credit.setAttribute('aria-label', `我的曲目：${currentTrack.title}，${currentTrack.artist}`);
-    }
+    updateNote(currentTrack || playableTracks[0], currentTrack ? state : 'ready');
   }
 
   function cancelFade() {
